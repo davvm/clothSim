@@ -20,10 +20,6 @@ public:
 	virtual void computeDampingForces(const Vector& x, const Vector& v, const Vector& uv, Vector& forces) const;
 	virtual void computeDampingForceDerivatives(const Vector& x, const Vector& uv, Eigen::SparseMatrix<Real>& dfdx) const;
 
-	typedef Eigen::Matrix<Real, 3, 3, 0, 3, 3> Matrix3;
-	static Matrix3 dndP(const Vector3& p0, const Vector3& p1, const Vector3& p2);
-	static Vector3 dNormalCrossProductdP(const Vector3& p, const Vector3& pOpposite, const Vector3& p0, const Vector3& p1);
-
 private:
 
 	// bend condition is attached to two triangles, ie four vertices like so:
