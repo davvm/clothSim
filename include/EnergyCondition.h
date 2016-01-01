@@ -15,6 +15,7 @@ public:
 
 	typedef Eigen::Matrix<Real, -1, 1, 0, -1, 1> Vector;
 	typedef Eigen::Matrix<Real, 3, 1, 0, 3, 1> Vector3;
+	typedef Eigen::Matrix<Real, 3, 3, 0, 3, 3> Matrix3;
 
 	// compute the vector condition function C for testing purposes:
 	virtual Vector C(const Vector& x, const Vector& uv) const = 0;
