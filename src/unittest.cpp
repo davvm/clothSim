@@ -57,9 +57,9 @@ namespace UnitTest1
 			BendCondition<double> bc(0, 1, 2, 3);
 
 			// check we've got the energy condition right, and we're measuring the angle between the normals:
-			Eigen::VectorXd c = bc.C(x, uv);
-			double expectedAngle = 2 * atan( 0.2 );
-			Assert::AreEqual(c[0], expectedAngle, 1.e-4);
+			Eigen::VectorXd c;
+			c = bc.C(x, uv);
+			Assert::AreEqual(c[0], 2 * atan(0.2), 1.e-4);
 
 			// compute forces analytically:
 			bc.computeForces(x, uv, f);
@@ -83,9 +83,15 @@ namespace UnitTest1
 			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 1, dx), f[9 + 1], tol);
 			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 2, dx), f[9 + 2], tol);
 
-			// turn the angle the other way:
+			// turn the angle the other way to make sure we're handling bends in both directions:
 			x[3 * 0 + 2] = -0.4;
 			x[3 * 3 + 2] = -0.2;
+
+			// test we're measuring a negative angle:
+			c = bc.C(x, uv);
+			Assert::AreEqual(c[0], -2 * atan(0.2), 1.e-4);
+
+			// recompute the forces and check the derivatives:
 			f.setConstant(0);
 			bc.computeForces(x, uv, f);
 			
