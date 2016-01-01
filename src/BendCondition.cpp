@@ -79,6 +79,15 @@ void BendCondition<Real>::computeForces(const Vector& x, const Vector& uv, Vecto
 	Vector3 e31 = v31.normalized();
 	Vector3 e21 = v21.normalized();
 
+	// cosines of the angles at each of the points:
+	Real c00 = e01.dot(e02);
+	Real c01 = e01.dot(e21);
+	Real c02 = -e02.dot(e21);
+
+	Real c13 = e31.dot(e32);
+	Real c11 = e21.dot(e31);
+	Real c12 = -e32.dot(e21);
+
 	// normalized triangle normals:
 	Vector3 n0 = (e21.cross(e01)).normalized();
 	Vector3 n1 = (e32.cross(e21)).normalized();
@@ -92,16 +101,37 @@ void BendCondition<Real>::computeForces(const Vector& x, const Vector& uv, Vecto
 	Vector3 b12 = (-e32 - e31 * (e31.dot(-e32))).normalized();
 	Vector3 b11 = (-e31 - e32 * (e32.dot(-e31))).normalized();
 
+	// vertex distances to opposite edges:
+	Real d00 = b00.dot(v01);
+	Real d01 = b01.dot(-v21);
+	Real d02 = b02.dot(-v02);
+
+	Real d11 = b11.dot(-v31);
+	Real d12 = b12.dot(v21);
+	Real d13 = b13.dot(v31);
+
 	// compute angle between triangles, using a sin as that can give us negative answers as well as positive ones:
 	Real cosTheta = n0.dot(n1);
 	Real sinTheta = n1.dot(b00);
 	Real theta = atan2(sinTheta,cosTheta);
 
-	// fill out first derivatives:
-	forces.segment<3>(3 * m_inds[0]) += theta * n0 / b00.dot(v01);
-	forces.segment<3>(3 * m_inds[3]) += theta * n1 / b13.dot(v31);
-	forces.segment<3>(3 * m_inds[1]) += theta * (b00.dot(b01) * n0 / (p2 - p1).dot(b01) + b13.dot(b11) * n1 / (p3 - p1).dot(b11));
-	forces.segment<3>(3 * m_inds[2]) += theta * (b00.dot(b02) * n0 / (p0 - p2).dot(b02) + b13.dot(b12) * n1 / (p1 - p2).dot(b12));
+	// derivatives of theta with respect to the different vertex positions:
+	Vector3 dThetadP0 = -n0 / d00;
+	Vector3 dThetadP1 = c02 * n0 / d01 + c12 * n1 / d11;
+	Vector3 dThetadP2 = c01 * n0 / d02 + c11 * n1 / d12;
+	Vector3 dThetadP3 = -n1 / d13;
+
+	// Compute forces:
+
+	// E = 1/2 C^t C
+	// dE/dx = theta * dThetadX
+	// f = -dE/dx
+	// f = - theta * dThetadX
+
+	forces.segment<3>(3 * m_inds[0]) -= theta * dThetadP0;
+	forces.segment<3>(3 * m_inds[1]) -= theta * dThetadP1;
+	forces.segment<3>(3 * m_inds[2]) -= theta * dThetadP2;
+	forces.segment<3>(3 * m_inds[3]) -= theta * dThetadP3;
 }
 
 template<class Real>
