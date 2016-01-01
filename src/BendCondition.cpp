@@ -97,27 +97,11 @@ void BendCondition<Real>::computeForces(const Vector& x, const Vector& uv, Vecto
 	Real sinTheta = n1.dot(b00);
 	Real theta = atan2(sinTheta,cosTheta);
 
-	// E = 1/2 * theta^2
-	// dE/dx = dtheta/dx * theta
-
-	// now we can fill in the derivatives for dE/dp0 and dE/dp3, which are just their
-	// respective normals divided by the perpendicular distances times the angle:
-	forces.segment<3>(3 * m_inds[0]) += (theta / b00.dot(v01) ) * n0;
-	forces.segment<3>(3 * m_inds[3]) += (theta / b13.dot(v31) ) * n1;
-
-	// d/dP1 cos theta = d/dP1(n0.n1) = -( sin theta ) dtheta/dP1
-	Real invSinc;
-	if (abs(theta) < Real(1.e-4))
-	{
-		invSinc = Real(1.0) / (Real(1.0) - theta * theta / Real(6.0));
-	}
-	else
-	{
-		invSinc = theta / sinTheta;
-	}
-
-	forces.segment<3>(3 * m_inds[1]) += invSinc * (n1.dot( b01 ) * n0 / (p2 - p1).dot(b01) + n0.dot( b11 ) * n1 / (p3 - p1).dot(b11));
-	forces.segment<3>(3 * m_inds[2]) += invSinc * (n1.dot( b02 ) * n0 / (p0 - p2).dot(b02) + n0.dot( b12 ) * n1 / (p1 - p2).dot(b12));
+	// fill out first derivatives:
+	forces.segment<3>(3 * m_inds[0]) += theta * n0 / b00.dot(v01);
+	forces.segment<3>(3 * m_inds[3]) += theta * n1 / b13.dot(v31);
+	forces.segment<3>(3 * m_inds[1]) += theta * (b00.dot(b01) * n0 / (p2 - p1).dot(b01) + b13.dot(b11) * n1 / (p3 - p1).dot(b11));
+	forces.segment<3>(3 * m_inds[2]) += theta * (b00.dot(b02) * n0 / (p0 - p2).dot(b02) + b13.dot(b12) * n1 / (p1 - p2).dot(b12));
 }
 
 template<class Real>
