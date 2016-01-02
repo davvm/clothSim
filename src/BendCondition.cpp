@@ -184,7 +184,16 @@ typename EnergyCondition<Real>::Vector BendCondition<Real>::C(const Vector& x, c
 }
 
 template<class Real>
-void BendCondition<Real>::computeForces(const Vector& x, const Vector& uv, Vector& forces) const
+void BendCondition<Real>::computeForces(
+	const Vector& x,
+	const Vector& uv,
+	Real k,
+	Vector& forces,
+	SparseMatrix &dfdx,
+	Real d,
+	Vector &dampingForces,
+	SparseMatrix &dampingPseudoDerivatives
+) const
 {
 	
 	TriangleQuantities q(x.segment<3>(3 * m_inds[0]), x.segment<3>(3 * m_inds[1]), x.segment<3>(3 * m_inds[2]), x.segment<3>(3 * m_inds[3]));
@@ -196,25 +205,61 @@ void BendCondition<Real>::computeForces(const Vector& x, const Vector& uv, Vecto
 	// f = -dE/dx
 	// f = - theta * dThetadX
 
-	forces.segment<3>(3 * m_inds[0]) -= q.theta * q.dThetadP0;
-	forces.segment<3>(3 * m_inds[1]) -= q.theta * q.dThetadP1;
-	forces.segment<3>(3 * m_inds[2]) -= q.theta * q.dThetadP2;
-	forces.segment<3>(3 * m_inds[3]) -= q.theta * q.dThetadP3;
-}
+	forces.segment<3>(3 * m_inds[0]) -= k * q.theta * q.dThetadP0;
+	forces.segment<3>(3 * m_inds[1]) -= k * q.theta * q.dThetadP1;
+	forces.segment<3>(3 * m_inds[2]) -= k * q.theta * q.dThetadP2;
+	forces.segment<3>(3 * m_inds[3]) -= k * q.theta * q.dThetadP3;
 
-template<class Real>
-void BendCondition<Real>::computeForceDerivatives(const Vector& x, const Vector& uv, Eigen::SparseMatrix<Real>& dfdx) const
-{
-}
+	// d/dP0( - q.theta * q.dThetadP0 )
+	// = - q.dThetadP0 * q.dThetadP0.transpose() - q.theta * q.d2ThetadP0dP0
 
-template<class Real>
-void BendCondition<Real>::computeDampingForces(const Vector& x, const Vector& v, const Vector& uv, Vector& forces) const
-{
-}
+	// compute force derivatives and insert them into the sparse matrix:
+	Matrix3 df0dP0 = -k * (q.dThetadP0 * q.dThetadP0.transpose() + q.theta * q.d2ThetadP0dP0);
+	Matrix3 df0dP1 = -k * (q.dThetadP0 * q.dThetadP1.transpose() + q.theta * q.d2ThetadP0dP1);
+	Matrix3 df0dP2 = -k * (q.dThetadP0 * q.dThetadP2.transpose() + q.theta * q.d2ThetadP0dP2);
+	Matrix3 df0dP3 = -k * (q.dThetadP0 * q.dThetadP3.transpose() + q.theta * q.d2ThetadP0dP3);
 
-template<class Real>
-void BendCondition<Real>::computeDampingForceDerivatives(const Vector& x, const Vector& uv, Eigen::SparseMatrix<Real>& dfdx) const
-{
+	Matrix3 df1dP0 = -k * (q.dThetadP1 * q.dThetadP0.transpose() + q.theta * q.d2ThetadP1dP0);
+	Matrix3 df1dP1 = -k * (q.dThetadP1 * q.dThetadP1.transpose() + q.theta * q.d2ThetadP1dP1);
+	Matrix3 df1dP2 = -k * (q.dThetadP1 * q.dThetadP2.transpose() + q.theta * q.d2ThetadP1dP2);
+	Matrix3 df1dP3 = -k * (q.dThetadP1 * q.dThetadP3.transpose() + q.theta * q.d2ThetadP1dP3);
+
+	Matrix3 df2dP0 = -k * (q.dThetadP2 * q.dThetadP0.transpose() + q.theta * q.d2ThetadP2dP0);
+	Matrix3 df2dP1 = -k * (q.dThetadP2 * q.dThetadP1.transpose() + q.theta * q.d2ThetadP2dP1);
+	Matrix3 df2dP2 = -k * (q.dThetadP2 * q.dThetadP2.transpose() + q.theta * q.d2ThetadP2dP2);
+	Matrix3 df2dP3 = -k * (q.dThetadP2 * q.dThetadP3.transpose() + q.theta * q.d2ThetadP2dP3);
+
+	Matrix3 df3dP0 = -k * (q.dThetadP3 * q.dThetadP0.transpose() + q.theta * q.d2ThetadP3dP0);
+	Matrix3 df3dP1 = -k * (q.dThetadP3 * q.dThetadP1.transpose() + q.theta * q.d2ThetadP3dP1);
+	Matrix3 df3dP2 = -k * (q.dThetadP3 * q.dThetadP2.transpose() + q.theta * q.d2ThetadP3dP2);
+	Matrix3 df3dP3 = -k * (q.dThetadP3 * q.dThetadP3.transpose() + q.theta * q.d2ThetadP3dP3);
+
+	for (int i = 0; i < 3; ++i)
+	{
+		for (int j = 0; j < 3; ++j)
+		{
+			dfdx.coeffRef(3 * m_inds[0] + i, 3 * m_inds[0] + j) += df0dP0(i, j);
+			dfdx.coeffRef(3 * m_inds[0] + i, 3 * m_inds[1] + j) += df0dP1(i, j);
+			dfdx.coeffRef(3 * m_inds[0] + i, 3 * m_inds[2] + j) += df0dP2(i, j);
+			dfdx.coeffRef(3 * m_inds[0] + i, 3 * m_inds[3] + j) += df0dP3(i, j);
+
+			dfdx.coeffRef(3 * m_inds[1] + i, 3 * m_inds[0] + j) += df1dP0(i, j);
+			dfdx.coeffRef(3 * m_inds[1] + i, 3 * m_inds[1] + j) += df1dP1(i, j);
+			dfdx.coeffRef(3 * m_inds[1] + i, 3 * m_inds[2] + j) += df1dP2(i, j);
+			dfdx.coeffRef(3 * m_inds[1] + i, 3 * m_inds[3] + j) += df1dP3(i, j);
+
+			dfdx.coeffRef(3 * m_inds[2] + i, 3 * m_inds[0] + j) += df2dP0(i, j);
+			dfdx.coeffRef(3 * m_inds[2] + i, 3 * m_inds[1] + j) += df2dP1(i, j);
+			dfdx.coeffRef(3 * m_inds[2] + i, 3 * m_inds[2] + j) += df2dP2(i, j);
+			dfdx.coeffRef(3 * m_inds[2] + i, 3 * m_inds[3] + j) += df2dP3(i, j);
+
+			dfdx.coeffRef(3 * m_inds[3] + i, 3 * m_inds[0] + j) += df3dP0(i, j);
+			dfdx.coeffRef(3 * m_inds[3] + i, 3 * m_inds[1] + j) += df3dP1(i, j);
+			dfdx.coeffRef(3 * m_inds[3] + i, 3 * m_inds[2] + j) += df3dP2(i, j);
+			dfdx.coeffRef(3 * m_inds[3] + i, 3 * m_inds[3] + j) += df3dP3(i, j);
+		}
+	}
+
 }
 
 template class BendCondition<float>;

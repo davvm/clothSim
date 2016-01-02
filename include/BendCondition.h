@@ -14,11 +14,7 @@ public:
 
 	virtual Vector C(const Vector& x, const Vector& uv) const;
 
-	virtual void computeForces(const Vector& x, const Vector& uv, Vector& forces) const;
-	virtual void computeForceDerivatives(const Vector& x, const Vector& uv, Eigen::SparseMatrix<Real>& dfdx) const;
-
-	virtual void computeDampingForces(const Vector& x, const Vector& v, const Vector& uv, Vector& forces) const;
-	virtual void computeDampingForceDerivatives(const Vector& x, const Vector& uv, Eigen::SparseMatrix<Real>& dfdx) const;
+	virtual void computeForces(const Vector& x, const Vector& uv, Real k, Vector& forces, SparseMatrix &dfdx, Real d, Vector &dampingForces, SparseMatrix &dampingPseudoDerivatives) const;
 
 	struct TriangleQuantities
 	{
