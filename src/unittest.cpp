@@ -523,11 +523,11 @@ namespace UnitTest1
 			return -k * (ePlus - eMinus) / (2 * dx);
 		}
 
-		Eigen::VectorXd numericalForceDerivative(const EnergyCondition<double> &c, const Eigen::VectorXd &uv, Eigen::VectorXd &x, double k, int i, double dx)
+		Eigen::VectorXd numericalForceDerivative(const EnergyCondition<double> &c, const Eigen::VectorXd &uv, Eigen::VectorXd &x, Eigen::VectorXd &v, double k, int i, double dx)
 		{
 			Eigen::SparseMatrix<double> dfdx((int)x.size(), (int)x.size());
 			double d = 1.0;
-			Eigen::VectorXd dampingForces;
+			Eigen::VectorXd dampingForces((int)x.size());
 			Eigen::SparseMatrix<double> dampingPseudoDerivatives((int)x.size(), (int)x.size());
 
 			double xOrig = x[i];
@@ -536,13 +536,13 @@ namespace UnitTest1
 
 			Eigen::VectorXd fPlus(x.size());
 			fPlus.setConstant(0);
-			c.computeForces(x, uv, k, fPlus, dfdx, d, dampingForces, dampingPseudoDerivatives);
+			c.computeForces(x, uv, k, fPlus, dfdx, v, d, dampingForces, dampingPseudoDerivatives);
 
 			x[i] = xOrig - dx;
 
 			Eigen::VectorXd fMinus(x.size());
 			fMinus.setConstant(0);
-			c.computeForces(x, uv, k, fMinus, dfdx, d, dampingForces, dampingPseudoDerivatives);
+			c.computeForces(x, uv, k, fMinus, dfdx, v, d, dampingForces, dampingPseudoDerivatives);
 
 			x[i] = xOrig;
 
@@ -558,7 +558,6 @@ namespace UnitTest1
 				Assert::AreEqual(v0[i], v1[i], tol);
 			}
 		}
-
 
 		TEST_METHOD(TestBendCondition)
 		{
@@ -585,14 +584,16 @@ namespace UnitTest1
 			x[3 * 4 + 2] = 0;
 
 			Eigen::VectorXd uv(5 * 2);
+			Eigen::VectorXd v(5 * 3);
 			Eigen::VectorXd f(5 * 3);
 			f.setConstant(0);
+			Eigen::VectorXd dampingForces(5 * 3);
+			dampingForces.setConstant(0);
 			BendCondition<double> bc(0, 1, 2, 3);
 
 			double k = 1.5;
 			Eigen::SparseMatrix<double> dfdx(5 * 3, 5 * 3);
 			double d = 1.0;
-			Eigen::VectorXd dampingForces;
 			Eigen::SparseMatrix<double> dampingPseudoDerivatives(5 * 3, 5 * 3);
 
 			// check we've got the energy condition right, and we're measuring the angle between the normals:
@@ -601,7 +602,7 @@ namespace UnitTest1
 			Assert::AreEqual(c[0], 2 * atan(0.2), 1.e-4);
 
 			// compute forces analytically:
-			bc.computeForces(x, uv, k, f, dfdx, d, dampingForces, dampingPseudoDerivatives);
+			bc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives);
 
 			// compare to numerically computed forces:
 			double dx = 0.0001;
@@ -625,7 +626,7 @@ namespace UnitTest1
 			for (int i = 0; i < x.size(); ++i)
 			{
 				Eigen::VectorXd fdN = dfdx.row(i);
-				checkVectorEquality(fdN, numericalForceDerivative(bc, uv, x, k, i, dx), tol);
+				checkVectorEquality(fdN, numericalForceDerivative(bc, uv, x, v, k, i, dx), tol);
 			}
 
 			// turn the angle the other way to make sure we're handling bends in both directions:
@@ -645,7 +646,15 @@ namespace UnitTest1
 					it.valueRef() = 0;
 				}
 			}
-			bc.computeForces(x, uv, k, f, dfdx, d, dampingForces, dampingPseudoDerivatives);
+			dampingForces.setConstant(0);
+			for (int i = 0; i < dampingPseudoDerivatives.outerSize(); ++i)
+			{
+				for (Eigen::SparseMatrix<double>::InnerIterator it(dampingPseudoDerivatives, i); it; ++it)
+				{
+					it.valueRef() = 0;
+				}
+			}
+			bc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives);
 
 			Assert::AreEqual(numericalForce(bc, uv, x, k, 0, dx), f[0], tol);
 			Assert::AreEqual(numericalForce(bc, uv, x, k, 1, dx), f[1], tol);
@@ -666,7 +675,7 @@ namespace UnitTest1
 			for (int i = 0; i < x.size(); ++i)
 			{
 				Eigen::VectorXd fdN = dfdx.row(i);
-				checkVectorEquality(fdN, numericalForceDerivative(bc, uv, x, k, i, dx), tol);
+				checkVectorEquality(fdN, numericalForceDerivative(bc, uv, x, v, k, i, dx), tol);
 			}
 
 			// test on 10 randomized configurations:
@@ -682,7 +691,15 @@ namespace UnitTest1
 						it.valueRef() = 0;
 					}
 				}
-				bc.computeForces(x, uv, k, f, dfdx, d, dampingForces, dampingPseudoDerivatives);
+				dampingForces.setConstant(0);
+				for (int i = 0; i < dampingPseudoDerivatives.outerSize(); ++i)
+				{
+					for (Eigen::SparseMatrix<double>::InnerIterator it(dampingPseudoDerivatives, i); it; ++it)
+					{
+						it.valueRef() = 0;
+					}
+				}
+				bc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives);
 
 				Assert::AreEqual(numericalForce(bc, uv, x, k, 0, dx), f[0], tol);
 				Assert::AreEqual(numericalForce(bc, uv, x, k, 1, dx), f[1], tol);
@@ -703,7 +720,7 @@ namespace UnitTest1
 				for (int i = 0; i < x.size(); ++i)
 				{
 					Eigen::VectorXd fdN = dfdx.row(i);
-					checkVectorEquality(fdN, numericalForceDerivative(bc, uv, x, k, i, dx), tol);
+					checkVectorEquality(fdN, numericalForceDerivative(bc, uv, x, v, k, i, dx), tol);
 				}
 			}
 		}

@@ -14,7 +14,7 @@ public:
 
 	virtual Vector C(const Vector& x, const Vector& uv) const;
 
-	virtual void computeForces(const Vector& x, const Vector& uv, Real k, Vector& forces, SparseMatrix &dfdx, Real d, Vector &dampingForces, SparseMatrix &dampingPseudoDerivatives) const;
+	virtual void computeForces(const Vector& x, const Vector& uv, Real k, Vector& forces, SparseMatrix &dfdx, const Vector& v, Real d, Vector &dampingForces, SparseMatrix &dampingPseudoDerivatives) const;
 
 private:
 

@@ -15,7 +15,7 @@ typename EnergyCondition<Real>::Vector ShearCondition<Real>::C(const Vector& x, 
 }
 
 template <class Real>
-void ShearCondition<Real>::computeForces(const Vector& x, const Vector& uv, Real k, Vector& forces, SparseMatrix &dfdx, Real d, Vector &dampingForces, SparseMatrix &dampingPseudoDerivatives) const
+void ShearCondition<Real>::computeForces(const Vector& x, const Vector& uv, Real k, Vector& forces, SparseMatrix &dfdx, const Vector& v, Real d, Vector &dampingForces, SparseMatrix &dampingPseudoDerivatives) const
 {
 
 }

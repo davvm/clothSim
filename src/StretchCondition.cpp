@@ -15,7 +15,7 @@ typename EnergyCondition<Real>::Vector StretchCondition<Real>::C(const Vector& x
 }
 
 template <class Real>
-void StretchCondition<Real>::computeForces(const Vector& x, const Vector& uv, Real k, Vector& forces, SparseMatrix &dfdx, Real d, Vector &dampingForces, SparseMatrix &dampingPseudoDerivatives) const
+void StretchCondition<Real>::computeForces(const Vector& x, const Vector& uv, Real k, Vector& forces, SparseMatrix &dfdx, const Vector& v, Real d, Vector &dampingForces, SparseMatrix &dampingPseudoDerivatives) const
 {
 
 }
