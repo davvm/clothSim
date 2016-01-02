@@ -14,146 +14,6 @@ namespace UnitTest1
 	{
 	public:
 
-		double numericalForce(const EnergyCondition<double> &c, const Eigen::VectorXd &uv, Eigen::VectorXd &x, int i, double dx)
-		{
-			double xOrig = x[i];
-			x[i] = xOrig + dx;
-			double ePlus = 0.5 * c.C(x, uv).squaredNorm();
-			x[i] = xOrig - dx;
-			double eMinus = 0.5 * c.C(x, uv).squaredNorm();
-			x[i] = xOrig;
-
-			// f = -dE/dx
-			return -(ePlus - eMinus) / (2 * dx);
-		}
-
-		TEST_METHOD(TestBendCondition)
-		{
-			Eigen::VectorXd x(5 * 3);
-			
-			x[3 * 0] = -2.0; 
-			x[3 * 0 + 1] = 0;
-			x[3 * 0 + 2] = 0.4;
-
-			x[3 * 1] = 0;
-			x[3 * 1 + 1] = 1.0;
-			x[3 * 1 + 2] = 0;
-
-			x[3 * 2] = 0;
-			x[3 * 2 + 1] = -1.0;
-			x[3 * 2 + 2] = 0;
-
-			x[3 * 3] = 1.0;
-			x[3 * 3 + 1] = 0;
-			x[3 * 3 + 2] = 0.2;
-
-			x[3 * 4] = 0.0;
-			x[3 * 4 + 1] = 0;
-			x[3 * 4 + 2] = 0;
-
-			Eigen::VectorXd uv(5 * 2);
-			Eigen::VectorXd f(5 * 3);
-			f.setConstant(0);
-			BendCondition<double> bc(0, 1, 2, 3);
-
-			// check we've got the energy condition right, and we're measuring the angle between the normals:
-			Eigen::VectorXd c;
-			c = bc.C(x, uv);
-			Assert::AreEqual(c[0], 2 * atan(0.2), 1.e-4);
-
-			// compute forces analytically:
-			bc.computeForces(x, uv, f);
-
-			// compare to numerically computed forces:
-			double dx = 0.0001;
-			double tol = 1.e-7;
-			Assert::AreEqual(numericalForce(bc, uv, x, 0, dx), f[0], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 1, dx), f[1], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 2, dx), f[2], tol);
-
-			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 0, dx), f[3 + 0], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 1, dx), f[3 + 1], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 2, dx), f[3 + 2], tol);
-
-			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 0, dx), f[6 + 0], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 1, dx), f[6 + 1], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 2, dx), f[6 + 2], tol);
-
-			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 0, dx), f[9 + 0], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 1, dx), f[9 + 1], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 2, dx), f[9 + 2], tol);
-
-			// turn the angle the other way to make sure we're handling bends in both directions:
-			x[3 * 0 + 2] = -0.4;
-			x[3 * 3 + 2] = -0.2;
-
-			// test we're measuring a negative angle:
-			c = bc.C(x, uv);
-			Assert::AreEqual(c[0], -2 * atan(0.2), 1.e-4);
-
-			// recompute the forces and check the derivatives:
-			f.setConstant(0);
-			bc.computeForces(x, uv, f);
-			
-			Assert::AreEqual(numericalForce(bc, uv, x, 0, dx), f[0], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 1, dx), f[1], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 2, dx), f[2], tol);
-
-			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 0, dx), f[3 + 0], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 1, dx), f[3 + 1], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 2, dx), f[3 + 2], tol);
-
-			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 0, dx), f[6 + 0], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 1, dx), f[6 + 1], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 2, dx), f[6 + 2], tol);
-
-			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 0, dx), f[9 + 0], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 1, dx), f[9 + 1], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 2, dx), f[9 + 2], tol);
-
-			// randomize positions:
-			x = Eigen::VectorXd::Random(5 * 3);
-			f.setConstant(0);
-			bc.computeForces(x, uv, f);
-
-			Assert::AreEqual(numericalForce(bc, uv, x, 0, dx), f[0], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 1, dx), f[1], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 2, dx), f[2], tol);
-
-			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 0, dx), f[3 + 0], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 1, dx), f[3 + 1], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 2, dx), f[3 + 2], tol);
-
-			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 0, dx), f[6 + 0], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 1, dx), f[6 + 1], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 2, dx), f[6 + 2], tol);
-
-			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 0, dx), f[9 + 0], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 1, dx), f[9 + 1], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 2, dx), f[9 + 2], tol);
-
-			// randomize positions again:
-			x = Eigen::VectorXd::Random(5 * 3);
-			f.setConstant(0);
-			bc.computeForces(x, uv, f);
-
-			Assert::AreEqual(numericalForce(bc, uv, x, 0, dx), f[0], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 1, dx), f[1], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 2, dx), f[2], tol);
-
-			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 0, dx), f[3 + 0], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 1, dx), f[3 + 1], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 2, dx), f[3 + 2], tol);
-
-			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 0, dx), f[6 + 0], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 1, dx), f[6 + 1], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 2, dx), f[6 + 2], tol);
-
-			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 0, dx), f[9 + 0], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 1, dx), f[9 + 1], tol);
-			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 2, dx), f[9 + 2], tol);
-		}
-
 		void triangleQuantitiesForDerivative(Eigen::VectorXd x, int idx, double dx, BendCondition<double>::TriangleQuantities &qPlus, BendCondition<double>::TriangleQuantities &qMinus) const
 		{
 			double component = x[idx];
@@ -216,7 +76,7 @@ namespace UnitTest1
 				BendCondition<double>::TriangleQuantities q(x.segment<3>(3 * 0), x.segment<3>(3 * 1), x.segment<3>(3 * 2), x.segment<3>(3 * 3));
 
 				double dx = 0.0001;
-				double tol = 1.e-6;
+				double tol = 1.e-5;
 				BendCondition<double>::TriangleQuantities q0xPlus, q0xMinus, q0yPlus, q0yMinus, q0zPlus, q0zMinus;
 				BendCondition<double>::TriangleQuantities q1xPlus, q1xMinus, q1yPlus, q1yMinus, q1zPlus, q1zMinus;
 				BendCondition<double>::TriangleQuantities q2xPlus, q2xMinus, q2yPlus, q2yMinus, q2zPlus, q2zMinus;
@@ -534,8 +394,235 @@ namespace UnitTest1
 				dc12dP3[2] = (q3zPlus.c12 - q3zMinus.c12) / (2 * dx);
 				checkVectorEquality(dc12dP3, q.dc12dP3, tol);
 
+
+				// second derivatives of theta:
+				BendCondition<double>::Matrix3 d2ThetadP0dP0;
+				d2ThetadP0dP0.col(0) = (q0xPlus.dThetadP0 - q0xMinus.dThetadP0) / (2 * dx);
+				d2ThetadP0dP0.col(1) = (q0yPlus.dThetadP0 - q0yMinus.dThetadP0) / (2 * dx);
+				d2ThetadP0dP0.col(2) = (q0zPlus.dThetadP0 - q0zMinus.dThetadP0) / (2 * dx);
+				checkMatrixEquality(d2ThetadP0dP0, q.d2ThetadP0dP0, tol);
+
+				BendCondition<double>::Matrix3 d2ThetadP0dP1;
+				d2ThetadP0dP1.col(0) = (q1xPlus.dThetadP0 - q1xMinus.dThetadP0) / (2 * dx);
+				d2ThetadP0dP1.col(1) = (q1yPlus.dThetadP0 - q1yMinus.dThetadP0) / (2 * dx);
+				d2ThetadP0dP1.col(2) = (q1zPlus.dThetadP0 - q1zMinus.dThetadP0) / (2 * dx);
+				checkMatrixEquality(d2ThetadP0dP1, q.d2ThetadP0dP1, tol);
+
+				BendCondition<double>::Matrix3 d2ThetadP0dP2;
+				d2ThetadP0dP2.col(0) = (q2xPlus.dThetadP0 - q2xMinus.dThetadP0) / (2 * dx);
+				d2ThetadP0dP2.col(1) = (q2yPlus.dThetadP0 - q2yMinus.dThetadP0) / (2 * dx);
+				d2ThetadP0dP2.col(2) = (q2zPlus.dThetadP0 - q2zMinus.dThetadP0) / (2 * dx);
+				checkMatrixEquality(d2ThetadP0dP2, q.d2ThetadP0dP2, tol);
+
+				BendCondition<double>::Matrix3 d2ThetadP0dP3;
+				d2ThetadP0dP3.col(0) = (q3xPlus.dThetadP0 - q3xMinus.dThetadP0) / (2 * dx);
+				d2ThetadP0dP3.col(1) = (q3yPlus.dThetadP0 - q3yMinus.dThetadP0) / (2 * dx);
+				d2ThetadP0dP3.col(2) = (q3zPlus.dThetadP0 - q3zMinus.dThetadP0) / (2 * dx);
+				checkMatrixEquality(d2ThetadP0dP3, q.d2ThetadP0dP3, tol);
+
+
+				BendCondition<double>::Matrix3 d2ThetadP1dP0;
+				d2ThetadP1dP0.col(0) = (q0xPlus.dThetadP1 - q0xMinus.dThetadP1) / (2 * dx);
+				d2ThetadP1dP0.col(1) = (q0yPlus.dThetadP1 - q0yMinus.dThetadP1) / (2 * dx);
+				d2ThetadP1dP0.col(2) = (q0zPlus.dThetadP1 - q0zMinus.dThetadP1) / (2 * dx);
+				checkMatrixEquality(d2ThetadP1dP0, q.d2ThetadP1dP0, tol);
+
+				BendCondition<double>::Matrix3 d2ThetadP1dP1;
+				d2ThetadP1dP1.col(0) = (q1xPlus.dThetadP1 - q1xMinus.dThetadP1) / (2 * dx);
+				d2ThetadP1dP1.col(1) = (q1yPlus.dThetadP1 - q1yMinus.dThetadP1) / (2 * dx);
+				d2ThetadP1dP1.col(2) = (q1zPlus.dThetadP1 - q1zMinus.dThetadP1) / (2 * dx);
+				checkMatrixEquality(d2ThetadP1dP1, q.d2ThetadP1dP1, tol);
+
+				BendCondition<double>::Matrix3 d2ThetadP1dP2;
+				d2ThetadP1dP2.col(0) = (q2xPlus.dThetadP1 - q2xMinus.dThetadP1) / (2 * dx);
+				d2ThetadP1dP2.col(1) = (q2yPlus.dThetadP1 - q2yMinus.dThetadP1) / (2 * dx);
+				d2ThetadP1dP2.col(2) = (q2zPlus.dThetadP1 - q2zMinus.dThetadP1) / (2 * dx);
+				checkMatrixEquality(d2ThetadP1dP2, q.d2ThetadP1dP2, tol);
+
+				BendCondition<double>::Matrix3 d2ThetadP1dP3;
+				d2ThetadP1dP3.col(0) = (q3xPlus.dThetadP1 - q3xMinus.dThetadP1) / (2 * dx);
+				d2ThetadP1dP3.col(1) = (q3yPlus.dThetadP1 - q3yMinus.dThetadP1) / (2 * dx);
+				d2ThetadP1dP3.col(2) = (q3zPlus.dThetadP1 - q3zMinus.dThetadP1) / (2 * dx);
+				checkMatrixEquality(d2ThetadP1dP3, q.d2ThetadP1dP3, tol);
+
+
+				BendCondition<double>::Matrix3 d2ThetadP2dP0;
+				d2ThetadP2dP0.col(0) = (q0xPlus.dThetadP2 - q0xMinus.dThetadP2) / (2 * dx);
+				d2ThetadP2dP0.col(1) = (q0yPlus.dThetadP2 - q0yMinus.dThetadP2) / (2 * dx);
+				d2ThetadP2dP0.col(2) = (q0zPlus.dThetadP2 - q0zMinus.dThetadP2) / (2 * dx);
+				checkMatrixEquality(d2ThetadP2dP0, q.d2ThetadP2dP0, tol);
+
+				BendCondition<double>::Matrix3 d2ThetadP2dP1;
+				d2ThetadP2dP1.col(0) = (q1xPlus.dThetadP2 - q1xMinus.dThetadP2) / (2 * dx);
+				d2ThetadP2dP1.col(1) = (q1yPlus.dThetadP2 - q1yMinus.dThetadP2) / (2 * dx);
+				d2ThetadP2dP1.col(2) = (q1zPlus.dThetadP2 - q1zMinus.dThetadP2) / (2 * dx);
+				checkMatrixEquality(d2ThetadP2dP1, q.d2ThetadP2dP1, tol);
+
+				BendCondition<double>::Matrix3 d2ThetadP2dP2;
+				d2ThetadP2dP2.col(0) = (q2xPlus.dThetadP2 - q2xMinus.dThetadP2) / (2 * dx);
+				d2ThetadP2dP2.col(1) = (q2yPlus.dThetadP2 - q2yMinus.dThetadP2) / (2 * dx);
+				d2ThetadP2dP2.col(2) = (q2zPlus.dThetadP2 - q2zMinus.dThetadP2) / (2 * dx);
+				checkMatrixEquality(d2ThetadP2dP2, q.d2ThetadP2dP2, tol);
+
+				BendCondition<double>::Matrix3 d2ThetadP2dP3;
+				d2ThetadP2dP3.col(0) = (q3xPlus.dThetadP2 - q3xMinus.dThetadP2) / (2 * dx);
+				d2ThetadP2dP3.col(1) = (q3yPlus.dThetadP2 - q3yMinus.dThetadP2) / (2 * dx);
+				d2ThetadP2dP3.col(2) = (q3zPlus.dThetadP2 - q3zMinus.dThetadP2) / (2 * dx);
+				checkMatrixEquality(d2ThetadP2dP3, q.d2ThetadP2dP3, tol);
+
+
+
+
+				BendCondition<double>::Matrix3 d2ThetadP3dP0;
+				d2ThetadP3dP0.col(0) = (q0xPlus.dThetadP3 - q0xMinus.dThetadP3) / (2 * dx);
+				d2ThetadP3dP0.col(1) = (q0yPlus.dThetadP3 - q0yMinus.dThetadP3) / (2 * dx);
+				d2ThetadP3dP0.col(2) = (q0zPlus.dThetadP3 - q0zMinus.dThetadP3) / (2 * dx);
+				checkMatrixEquality(d2ThetadP3dP0, q.d2ThetadP3dP0, tol);
+
+				BendCondition<double>::Matrix3 d2ThetadP3dP1;
+				d2ThetadP3dP1.col(0) = (q1xPlus.dThetadP3 - q1xMinus.dThetadP3) / (2 * dx);
+				d2ThetadP3dP1.col(1) = (q1yPlus.dThetadP3 - q1yMinus.dThetadP3) / (2 * dx);
+				d2ThetadP3dP1.col(2) = (q1zPlus.dThetadP3 - q1zMinus.dThetadP3) / (2 * dx);
+				checkMatrixEquality(d2ThetadP3dP1, q.d2ThetadP3dP1, tol);
+
+				BendCondition<double>::Matrix3 d2ThetadP3dP2;
+				d2ThetadP3dP2.col(0) = (q2xPlus.dThetadP3 - q2xMinus.dThetadP3) / (2 * dx);
+				d2ThetadP3dP2.col(1) = (q2yPlus.dThetadP3 - q2yMinus.dThetadP3) / (2 * dx);
+				d2ThetadP3dP2.col(2) = (q2zPlus.dThetadP3 - q2zMinus.dThetadP3) / (2 * dx);
+				checkMatrixEquality(d2ThetadP3dP2, q.d2ThetadP3dP2, tol);
+
+				BendCondition<double>::Matrix3 d2ThetadP3dP3;
+				d2ThetadP3dP3.col(0) = (q3xPlus.dThetadP3 - q3xMinus.dThetadP3) / (2 * dx);
+				d2ThetadP3dP3.col(1) = (q3yPlus.dThetadP3 - q3yMinus.dThetadP3) / (2 * dx);
+				d2ThetadP3dP3.col(2) = (q3zPlus.dThetadP3 - q3zMinus.dThetadP3) / (2 * dx);
+				checkMatrixEquality(d2ThetadP3dP3, q.d2ThetadP3dP3, tol);
+
+
 				// randomize the positions:
 				x = Eigen::VectorXd::Random(5 * 3);
+			}
+		}
+
+		double numericalForce(const EnergyCondition<double> &c, const Eigen::VectorXd &uv, Eigen::VectorXd &x, int i, double dx)
+		{
+			double xOrig = x[i];
+			x[i] = xOrig + dx;
+			double ePlus = 0.5 * c.C(x, uv).squaredNorm();
+			x[i] = xOrig - dx;
+			double eMinus = 0.5 * c.C(x, uv).squaredNorm();
+			x[i] = xOrig;
+
+			// f = -dE/dx
+			return -(ePlus - eMinus) / (2 * dx);
+		}
+
+		TEST_METHOD(TestBendCondition)
+		{
+			Eigen::VectorXd x(5 * 3);
+
+			x[3 * 0] = -2.0;
+			x[3 * 0 + 1] = 0;
+			x[3 * 0 + 2] = 0.4;
+
+			x[3 * 1] = 0;
+			x[3 * 1 + 1] = 1.0;
+			x[3 * 1 + 2] = 0;
+
+			x[3 * 2] = 0;
+			x[3 * 2 + 1] = -1.0;
+			x[3 * 2 + 2] = 0;
+
+			x[3 * 3] = 1.0;
+			x[3 * 3 + 1] = 0;
+			x[3 * 3 + 2] = 0.2;
+
+			x[3 * 4] = 0.0;
+			x[3 * 4 + 1] = 0;
+			x[3 * 4 + 2] = 0;
+
+			Eigen::VectorXd uv(5 * 2);
+			Eigen::VectorXd f(5 * 3);
+			f.setConstant(0);
+			BendCondition<double> bc(0, 1, 2, 3);
+
+			// check we've got the energy condition right, and we're measuring the angle between the normals:
+			Eigen::VectorXd c;
+			c = bc.C(x, uv);
+			Assert::AreEqual(c[0], 2 * atan(0.2), 1.e-4);
+
+			// compute forces analytically:
+			bc.computeForces(x, uv, f);
+
+			// compare to numerically computed forces:
+			double dx = 0.0001;
+			double tol = 1.e-5;
+			Assert::AreEqual(numericalForce(bc, uv, x, 0, dx), f[0], tol);
+			Assert::AreEqual(numericalForce(bc, uv, x, 1, dx), f[1], tol);
+			Assert::AreEqual(numericalForce(bc, uv, x, 2, dx), f[2], tol);
+
+			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 0, dx), f[3 + 0], tol);
+			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 1, dx), f[3 + 1], tol);
+			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 2, dx), f[3 + 2], tol);
+
+			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 0, dx), f[6 + 0], tol);
+			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 1, dx), f[6 + 1], tol);
+			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 2, dx), f[6 + 2], tol);
+
+			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 0, dx), f[9 + 0], tol);
+			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 1, dx), f[9 + 1], tol);
+			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 2, dx), f[9 + 2], tol);
+
+			// turn the angle the other way to make sure we're handling bends in both directions:
+			x[3 * 0 + 2] = -0.4;
+			x[3 * 3 + 2] = -0.2;
+
+			// test we're measuring a negative angle:
+			c = bc.C(x, uv);
+			Assert::AreEqual(c[0], -2 * atan(0.2), 1.e-4);
+
+			// recompute the forces and check the derivatives:
+			f.setConstant(0);
+			bc.computeForces(x, uv, f);
+
+			Assert::AreEqual(numericalForce(bc, uv, x, 0, dx), f[0], tol);
+			Assert::AreEqual(numericalForce(bc, uv, x, 1, dx), f[1], tol);
+			Assert::AreEqual(numericalForce(bc, uv, x, 2, dx), f[2], tol);
+
+			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 0, dx), f[3 + 0], tol);
+			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 1, dx), f[3 + 1], tol);
+			Assert::AreEqual(numericalForce(bc, uv, x, 3 + 2, dx), f[3 + 2], tol);
+
+			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 0, dx), f[6 + 0], tol);
+			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 1, dx), f[6 + 1], tol);
+			Assert::AreEqual(numericalForce(bc, uv, x, 6 + 2, dx), f[6 + 2], tol);
+
+			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 0, dx), f[9 + 0], tol);
+			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 1, dx), f[9 + 1], tol);
+			Assert::AreEqual(numericalForce(bc, uv, x, 9 + 2, dx), f[9 + 2], tol);
+
+			// test on 10 randomized configurations:
+			for (size_t i = 0; i < 10; ++i)
+			{
+				// randomize positions:
+				x = Eigen::VectorXd::Random(5 * 3);
+				f.setConstant(0);
+				bc.computeForces(x, uv, f);
+
+				Assert::AreEqual(numericalForce(bc, uv, x, 0, dx), f[0], tol);
+				Assert::AreEqual(numericalForce(bc, uv, x, 1, dx), f[1], tol);
+				Assert::AreEqual(numericalForce(bc, uv, x, 2, dx), f[2], tol);
+
+				Assert::AreEqual(numericalForce(bc, uv, x, 3 + 0, dx), f[3 + 0], tol);
+				Assert::AreEqual(numericalForce(bc, uv, x, 3 + 1, dx), f[3 + 1], tol);
+				Assert::AreEqual(numericalForce(bc, uv, x, 3 + 2, dx), f[3 + 2], tol);
+
+				Assert::AreEqual(numericalForce(bc, uv, x, 6 + 0, dx), f[6 + 0], tol);
+				Assert::AreEqual(numericalForce(bc, uv, x, 6 + 1, dx), f[6 + 1], tol);
+				Assert::AreEqual(numericalForce(bc, uv, x, 6 + 2, dx), f[6 + 2], tol);
+
+				Assert::AreEqual(numericalForce(bc, uv, x, 9 + 0, dx), f[9 + 0], tol);
+				Assert::AreEqual(numericalForce(bc, uv, x, 9 + 1, dx), f[9 + 1], tol);
+				Assert::AreEqual(numericalForce(bc, uv, x, 9 + 2, dx), f[9 + 2], tol);
 			}
 		}
 

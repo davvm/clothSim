@@ -58,6 +58,11 @@ public:
 		// derivatives of the perpendicular distances:
 		Vector3 dd00dP0, dd00dP1, dd00dP2, dd00dP3, dd01dP0, dd01dP1, dd01dP2, dd01dP3, dd02dP0, dd02dP1, dd02dP2, dd02dP3, dd11dP0, dd11dP1, dd11dP2, dd11dP3, dd12dP0, dd12dP1, dd12dP2, dd12dP3, dd13dP0, dd13dP1, dd13dP2, dd13dP3;
 
+		// second derivatives of theta with respect to the different vertex positions:
+		Matrix3 d2ThetadP0dP0, d2ThetadP0dP1, d2ThetadP0dP2, d2ThetadP0dP3;
+		Matrix3 d2ThetadP1dP0, d2ThetadP1dP1, d2ThetadP1dP2, d2ThetadP1dP3;
+		Matrix3 d2ThetadP2dP0, d2ThetadP2dP1, d2ThetadP2dP2, d2ThetadP2dP3;
+		Matrix3 d2ThetadP3dP0, d2ThetadP3dP1, d2ThetadP3dP2, d2ThetadP3dP3;
 	};
 
 private:

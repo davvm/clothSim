@@ -146,6 +146,30 @@ BendCondition<Real>::TriangleQuantities::TriangleQuantities(const Vector3 &p0, c
 	dd13dP1 = b13 * v21.dot(-v32) / v21.dot(v21);
 	dd13dP2 = b13 * v21.dot(v31) / v21.dot(v21);
 	dd13dP3 = -b13;
+
+
+	// second derivatives of theta:
+	d2ThetadP0dP0 = -dn0dP0 / d00 + n0 * dd00dP0.transpose() / (d00 * d00);
+	d2ThetadP0dP1 = -dn0dP1 / d00 + n0 * dd00dP1.transpose() / (d00 * d00);
+	d2ThetadP0dP2 = -dn0dP2 / d00 + n0 * dd00dP2.transpose() / (d00 * d00);
+	d2ThetadP0dP3 = -dn0dP3 / d00 + n0 * dd00dP3.transpose() / (d00 * d00);
+
+	d2ThetadP1dP0 = ((c02 / d01) * dn0dP0 + n0 * (d01 * dc02dP0 - c02 * dd01dP0).transpose() / (d01 * d01)) + ((c12 / d11) * dn1dP0 + n1 * (d11 * dc12dP0 - c12 * dd11dP0).transpose() / (d11 * d11));
+	d2ThetadP1dP1 = ((c02 / d01) * dn0dP1 + n0 * (d01 * dc02dP1 - c02 * dd01dP1).transpose() / (d01 * d01)) + ((c12 / d11) * dn1dP1 + n1 * (d11 * dc12dP1 - c12 * dd11dP1).transpose() / (d11 * d11));
+	d2ThetadP1dP2 = ((c02 / d01) * dn0dP2 + n0 * (d01 * dc02dP2 - c02 * dd01dP2).transpose() / (d01 * d01)) + ((c12 / d11) * dn1dP2 + n1 * (d11 * dc12dP2 - c12 * dd11dP2).transpose() / (d11 * d11));
+	d2ThetadP1dP3 = ((c02 / d01) * dn0dP3 + n0 * (d01 * dc02dP3 - c02 * dd01dP3).transpose() / (d01 * d01)) + ((c12 / d11) * dn1dP3 + n1 * (d11 * dc12dP3 - c12 * dd11dP3).transpose() / (d11 * d11));
+
+	d2ThetadP2dP0 = ((c01 / d02) * dn0dP0 + n0 * (d02 * dc01dP0 - c01 * dd02dP0).transpose() / (d02 * d02)) + ((c11 / d12) * dn1dP0 + n1 * (d12 * dc11dP0 - c11 * dd12dP0).transpose() / (d12 * d12));
+	d2ThetadP2dP1 = ((c01 / d02) * dn0dP1 + n0 * (d02 * dc01dP1 - c01 * dd02dP1).transpose() / (d02 * d02)) + ((c11 / d12) * dn1dP1 + n1 * (d12 * dc11dP1 - c11 * dd12dP1).transpose() / (d12 * d12));
+	d2ThetadP2dP2 = ((c01 / d02) * dn0dP2 + n0 * (d02 * dc01dP2 - c01 * dd02dP2).transpose() / (d02 * d02)) + ((c11 / d12) * dn1dP2 + n1 * (d12 * dc11dP2 - c11 * dd12dP2).transpose() / (d12 * d12));
+	d2ThetadP2dP3 = ((c01 / d02) * dn0dP3 + n0 * (d02 * dc01dP3 - c01 * dd02dP3).transpose() / (d02 * d02)) + ((c11 / d12) * dn1dP3 + n1 * (d12 * dc11dP3 - c11 * dd12dP3).transpose() / (d12 * d12));
+
+	d2ThetadP3dP0 = -dn1dP0 / d13 + n1 * dd13dP0.transpose() / (d13 * d13);
+	d2ThetadP3dP1 = -dn1dP1 / d13 + n1 * dd13dP1.transpose() / (d13 * d13);
+	d2ThetadP3dP2 = -dn1dP2 / d13 + n1 * dd13dP2.transpose() / (d13 * d13);
+	d2ThetadP3dP3 = -dn1dP3 / d13 + n1 * dd13dP3.transpose() / (d13 * d13);
+
+
 }
 
 template<class Real>
