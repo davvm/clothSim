@@ -19,7 +19,7 @@ public:
 	struct TriangleQuantities
 	{
 		TriangleQuantities();
-		TriangleQuantities(const Vector3 &p0, const Vector3 &p1, const Vector3 &p2, const Vector3 &p3);
+		TriangleQuantities(const Vector3 &p0, const Vector3 &p1, const Vector3 &p2, const Vector3 &p3, const Vector3 &v0, const Vector3 &v1, const Vector3 &v2, const Vector3 &v3);
 
 		// edge vectors:
 		Vector3 v01, v02, v32, v31, v21;
@@ -44,6 +44,9 @@ public:
 
 		// derivatives of theta with respect to the different vertex positions:
 		Vector3 dThetadP0, dThetadP1, dThetadP2, dThetadP3;
+
+		// time derivative of angle:
+		Real dThetadt;
 
 		// derivatives of the normals:
 		Matrix3 dn0dP0, dn0dP1, dn0dP2, dn0dP3, dn1dP0, dn1dP1, dn1dP2, dn1dP3;

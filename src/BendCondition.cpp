@@ -15,7 +15,10 @@ BendCondition<Real>::TriangleQuantities::TriangleQuantities()
 }
 
 template<class Real>
-BendCondition<Real>::TriangleQuantities::TriangleQuantities(const Vector3 &p0, const Vector3 &p1, const Vector3 &p2, const Vector3 &p3)
+BendCondition<Real>::TriangleQuantities::TriangleQuantities(
+	const Vector3 &p0, const Vector3 &p1, const Vector3 &p2, const Vector3 &p3,
+	const Vector3 &v0, const Vector3 &v1, const Vector3 &v2, const Vector3 &v3
+)
 {
 	// triangles are laid out like this:
 	//     0
@@ -81,6 +84,9 @@ BendCondition<Real>::TriangleQuantities::TriangleQuantities(const Vector3 &p0, c
 	dThetadP1 = c02 * n0 / d01 + c12 * n1 / d11;
 	dThetadP2 = c01 * n0 / d02 + c11 * n1 / d12;
 	dThetadP3 = -n1 / d13;
+
+	// time derivative of theta:
+	dThetadt = dThetadP0.dot(v0) + dThetadP1.dot(v1) + dThetadP2.dot(v2) + dThetadP3.dot(v3);
 
 	// now compute the derivatives of some terms in those formulae, so we can get second derivatives:
 
@@ -175,7 +181,10 @@ BendCondition<Real>::TriangleQuantities::TriangleQuantities(const Vector3 &p0, c
 template<class Real>
 typename EnergyCondition<Real>::Vector BendCondition<Real>::C(const Vector& x, const Vector& uv) const
 {
-	TriangleQuantities q(x.segment<3>(3 * m_inds[0]), x.segment<3>(3 * m_inds[1]), x.segment<3>(3 * m_inds[2]), x.segment<3>(3 * m_inds[3]));
+	TriangleQuantities q(
+		x.segment<3>(3 * m_inds[0]), x.segment<3>(3 * m_inds[1]), x.segment<3>(3 * m_inds[2]), x.segment<3>(3 * m_inds[3]),
+		x.segment<3>(3 * m_inds[0]), x.segment<3>(3 * m_inds[1]), x.segment<3>(3 * m_inds[2]), x.segment<3>(3 * m_inds[3])
+	);
 
 	Vector ret(1);
 	ret[0] = q.theta;
@@ -197,7 +206,10 @@ void BendCondition<Real>::computeForces(
 ) const
 {
 	
-	TriangleQuantities q(x.segment<3>(3 * m_inds[0]), x.segment<3>(3 * m_inds[1]), x.segment<3>(3 * m_inds[2]), x.segment<3>(3 * m_inds[3]));
+	TriangleQuantities q(
+		x.segment<3>(3 * m_inds[0]), x.segment<3>(3 * m_inds[1]), x.segment<3>(3 * m_inds[2]), x.segment<3>(3 * m_inds[3]),
+		v.segment<3>(3 * m_inds[0]), v.segment<3>(3 * m_inds[1]), v.segment<3>(3 * m_inds[2]), v.segment<3>(3 * m_inds[3])
+	);
 
 	// Compute forces:
 
@@ -262,19 +274,13 @@ void BendCondition<Real>::computeForces(
 	}
 
 	// compute damping forces and pseudo derivatives:
-	const Vector3 &v0 = v.segment<3>(3 * m_inds[0]);
-	const Vector3 &v1 = v.segment<3>(3 * m_inds[1]);
-	const Vector3 &v2 = v.segment<3>(3 * m_inds[2]);
-	const Vector3 &v3 = v.segment<3>(3 * m_inds[3]);
 
 	// fd = -d * dTheta/dt * dTheta/dx:
 
-	Real dThetadt = q.dThetadP0.dot(v0) + q.dThetadP1.dot(v1) + q.dThetadP2.dot(v2) + q.dThetadP3.dot(v3);
-
-	dampingForces.segment<3>(3 * m_inds[0]) -= d * dThetadt * q.dThetadP0;
-	dampingForces.segment<3>(3 * m_inds[1]) -= d * dThetadt * q.dThetadP1;
-	dampingForces.segment<3>(3 * m_inds[2]) -= d * dThetadt * q.dThetadP2;
-	dampingForces.segment<3>(3 * m_inds[3]) -= d * dThetadt * q.dThetadP3;
+	dampingForces.segment<3>(3 * m_inds[0]) -= d * q.dThetadt * q.dThetadP0;
+	dampingForces.segment<3>(3 * m_inds[1]) -= d * q.dThetadt * q.dThetadP1;
+	dampingForces.segment<3>(3 * m_inds[2]) -= d * q.dThetadt * q.dThetadP2;
+	dampingForces.segment<3>(3 * m_inds[3]) -= d * q.dThetadt * q.dThetadP3;
 
 	Matrix3 dfd0dP0 = -d * (q.dThetadP0 * q.dThetadP0.transpose());
 	Matrix3 dfd0dP1 = -d * (q.dThetadP0 * q.dThetadP1.transpose());

@@ -14,6 +14,7 @@ public:
 	virtual ~EnergyCondition() {}
 
 	typedef Eigen::Matrix<Real, -1, 1, 0, -1, 1> Vector;
+	typedef Eigen::Matrix<Real, 2, 1, 0, 2, 1> Vector2;
 	typedef Eigen::Matrix<Real, 3, 1, 0, 3, 1> Vector3;
 	typedef Eigen::Matrix<Real, 3, 3, 0, 3, 3> Matrix3;
 	typedef Eigen::SparseMatrix<Real> SparseMatrix;

@@ -24,6 +24,7 @@
     <ClInclude Include="include\EnergyCondition.h" />
     <ClInclude Include="include\ShearCondition.h" />
     <ClInclude Include="include\StretchCondition.h" />
+    <ClInclude Include="include\TangentTriangleQuantities.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <Keyword>Win32Proj</Keyword>
