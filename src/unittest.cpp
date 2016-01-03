@@ -1,5 +1,7 @@
 #include "CppUnitTest.h"
 
+#include "EqualityTests.h"
+
 #include "ShearCondition.h"
 #include "StretchCondition.h"
 #include "BendCondition.h"
@@ -28,28 +30,6 @@ namespace UnitTest1
 				v.segment<3>(3 * 0), v.segment<3>(3 * 1), v.segment<3>(3 * 2), v.segment<3>(3 * 3)
 				);
 			x[idx] = component;
-		}
-
-		void checkVectorEquality(BendCondition<double>::Vector3 v0, BendCondition<double>::Vector3 v1, double tol)
-		{
-			Assert::AreEqual(v0[0], v1[0], tol);
-			Assert::AreEqual(v0[1], v1[1], tol);
-			Assert::AreEqual(v0[2], v1[2], tol);
-		}
-
-		void checkMatrixEquality(BendCondition<double>::Matrix3 m0, BendCondition<double>::Matrix3 m1, double tol)
-		{
-			Assert::AreEqual(m0(0, 0), m1(0, 0), tol);
-			Assert::AreEqual(m0(0, 1), m1(0, 1), tol);
-			Assert::AreEqual(m0(0, 2), m1(0, 2), tol);
-
-			Assert::AreEqual(m0(1, 0), m1(1, 0), tol);
-			Assert::AreEqual(m0(1, 1), m1(1, 1), tol);
-			Assert::AreEqual(m0(1, 2), m1(1, 2), tol);
-
-			Assert::AreEqual(m0(2, 0), m1(2, 0), tol);
-			Assert::AreEqual(m0(2, 1), m1(2, 1), tol);
-			Assert::AreEqual(m0(2, 2), m1(2, 2), tol);
 		}
 
 		void checkBendTriangleQuantities(const Eigen::VectorXd &x, const Eigen::VectorXd &v, double dx, double tol)
@@ -880,69 +860,302 @@ namespace UnitTest1
 
 		}
 
-		double numericalForce(const EnergyCondition<double> &c, const Eigen::VectorXd &uv, Eigen::VectorXd &x, double k, int i, double dx)
-		{
-			double xOrig = x[i];
-			x[i] = xOrig + dx;
-			double ePlus = 0.5 * c.C(x, uv).squaredNorm();
-			x[i] = xOrig - dx;
-			double eMinus = 0.5 * c.C(x, uv).squaredNorm();
-			x[i] = xOrig;
 
-			// f = -dE/dx
-			return -k * (ePlus - eMinus) / (2 * dx);
+		void shearTriangleQuantitiesForDerivative(Eigen::VectorXd x, Eigen::VectorXd uv, Eigen::VectorXd v, int idx, double dx, ShearCondition<double>::TriangleQuantities &qPlus, ShearCondition<double>::TriangleQuantities &qMinus) const
+		{
+			double component = x[idx];
+			x[idx] = component + dx;
+			qPlus = ShearCondition<double>::TriangleQuantities(
+				x.segment<3>(3 * 0), x.segment<3>(3 * 1), x.segment<3>(3 * 2),
+				uv.segment<2>(2 * 0), uv.segment<2>(2 * 1), uv.segment<2>(2 * 2),
+				v.segment<3>(3 * 0), v.segment<3>(3 * 1), v.segment<3>(3 * 2)
+				);
+			x[idx] = component - dx;
+			qMinus = ShearCondition<double>::TriangleQuantities(
+				x.segment<3>(3 * 0), x.segment<3>(3 * 1), x.segment<3>(3 * 2),
+				uv.segment<2>(2 * 0), uv.segment<2>(2 * 1), uv.segment<2>(2 * 2),
+				v.segment<3>(3 * 0), v.segment<3>(3 * 1), v.segment<3>(3 * 2)
+				);
+			x[idx] = component;
 		}
 
-		Eigen::VectorXd numericalForceDerivative(const EnergyCondition<double> &c, const Eigen::VectorXd &uv, Eigen::VectorXd &x, Eigen::VectorXd &v, double k, int i, double dx)
+		void checkShearTriangleQuantities(const Eigen::VectorXd &x, const Eigen::VectorXd &uv, const Eigen::VectorXd &v, double dx, double tol)
 		{
-			Eigen::SparseMatrix<double> dfdx((int)x.size(), (int)x.size());
-			double d = 1.0;
-			Eigen::VectorXd dampingForces((int)x.size());
-			Eigen::SparseMatrix<double> dampingPseudoDerivatives((int)x.size(), (int)x.size());
+			ShearCondition<double>::TriangleQuantities q(
+				x.segment<3>(3 * 0), x.segment<3>(3 * 1), x.segment<3>(3 * 2),
+				uv.segment<2>(2 * 0), uv.segment<2>(2 * 1), uv.segment<2>(2 * 2),
+				v.segment<3>(3 * 0), v.segment<3>(3 * 1), v.segment<3>(3 * 2)
+				);
 
-			double xOrig = x[i];
+			Eigen::VectorXd xtest;
+			xtest = x + v * dx;
+			ShearCondition<double>::TriangleQuantities qtPlus(
+				xtest.segment<3>(3 * 0), xtest.segment<3>(3 * 1), xtest.segment<3>(3 * 2),
+				uv.segment<2>(2 * 0), uv.segment<2>(2 * 1), uv.segment<2>(2 * 2),
+				v.segment<3>(3 * 0), v.segment<3>(3 * 1), v.segment<3>(3 * 2)
+				);
+			xtest = x - v * dx;
+			ShearCondition<double>::TriangleQuantities qtMinus(
+				xtest.segment<3>(3 * 0), xtest.segment<3>(3 * 1), xtest.segment<3>(3 * 2),
+				uv.segment<2>(2 * 0), uv.segment<2>(2 * 1), uv.segment<2>(2 * 2),
+				v.segment<3>(3 * 0), v.segment<3>(3 * 1), v.segment<3>(3 * 2)
+				);
 
-			x[i] = xOrig + dx;
+			double dCdt = (qtPlus.C - qtMinus.C) / (2 * dx);
+			//Assert::AreEqual(dCdt, q.dCdt, tol);
 
-			Eigen::VectorXd fPlus(x.size());
-			fPlus.setConstant(0);
-			c.computeForces(x, uv, k, fPlus, dfdx, v, d, dampingForces, dampingPseudoDerivatives);
 
-			x[i] = xOrig - dx;
+			ShearCondition<double>::TriangleQuantities q0xPlus, q0xMinus, q0yPlus, q0yMinus, q0zPlus, q0zMinus;
+			ShearCondition<double>::TriangleQuantities q1xPlus, q1xMinus, q1yPlus, q1yMinus, q1zPlus, q1zMinus;
+			ShearCondition<double>::TriangleQuantities q2xPlus, q2xMinus, q2yPlus, q2yMinus, q2zPlus, q2zMinus;
 
-			Eigen::VectorXd fMinus(x.size());
-			fMinus.setConstant(0);
-			c.computeForces(x, uv, k, fMinus, dfdx, v, d, dampingForces, dampingPseudoDerivatives);
+			shearTriangleQuantitiesForDerivative(x, uv, v, 0, dx, q0xPlus, q0xMinus);
+			shearTriangleQuantitiesForDerivative(x, uv, v, 1, dx, q0yPlus, q0yMinus);
+			shearTriangleQuantitiesForDerivative(x, uv, v, 2, dx, q0zPlus, q0zMinus);
 
-			x[i] = xOrig;
+			shearTriangleQuantitiesForDerivative(x, uv, v, 3, dx, q1xPlus, q1xMinus);
+			shearTriangleQuantitiesForDerivative(x, uv, v, 4, dx, q1yPlus, q1yMinus);
+			shearTriangleQuantitiesForDerivative(x, uv, v, 5, dx, q1zPlus, q1zMinus);
 
-			// df/dx
-			return (fPlus - fMinus) / (2 * dx);
+			shearTriangleQuantitiesForDerivative(x, uv, v, 6, dx, q2xPlus, q2xMinus);
+			shearTriangleQuantitiesForDerivative(x, uv, v, 7, dx, q2yPlus, q2yMinus);
+			shearTriangleQuantitiesForDerivative(x, uv, v, 8, dx, q2zPlus, q2zMinus);
+
+
+			// test first normalized wu and wv derivatives:
+			BendCondition<double>::Matrix3 dwudP0;
+			dwudP0.col(0) = (q0xPlus.wu - q0xMinus.wu) / (2 * dx);
+			dwudP0.col(1) = (q0yPlus.wu - q0yMinus.wu) / (2 * dx);
+			dwudP0.col(2) = (q0zPlus.wu - q0zMinus.wu) / (2 * dx);
+			checkMatrixEquality(dwudP0, q.dwudP0, tol);
+
+			BendCondition<double>::Matrix3 dwudP1;
+			dwudP1.col(0) = (q1xPlus.wu - q1xMinus.wu) / (2 * dx);
+			dwudP1.col(1) = (q1yPlus.wu - q1yMinus.wu) / (2 * dx);
+			dwudP1.col(2) = (q1zPlus.wu - q1zMinus.wu) / (2 * dx);
+			checkMatrixEquality(dwudP1, q.dwudP1, tol);
+
+			BendCondition<double>::Matrix3 dwudP2;
+			dwudP2.col(0) = (q2xPlus.wu - q2xMinus.wu) / (2 * dx);
+			dwudP2.col(1) = (q2yPlus.wu - q2yMinus.wu) / (2 * dx);
+			dwudP2.col(2) = (q2zPlus.wu - q2zMinus.wu) / (2 * dx);
+			checkMatrixEquality(dwudP2, q.dwudP2, tol);
+
+			BendCondition<double>::Matrix3 dwvdP0;
+			dwvdP0.col(0) = (q0xPlus.wv - q0xMinus.wv) / (2 * dx);
+			dwvdP0.col(1) = (q0yPlus.wv - q0yMinus.wv) / (2 * dx);
+			dwvdP0.col(2) = (q0zPlus.wv - q0zMinus.wv) / (2 * dx);
+			checkMatrixEquality(dwvdP0, q.dwvdP0, tol);
+
+			BendCondition<double>::Matrix3 dwvdP1;
+			dwvdP1.col(0) = (q1xPlus.wv - q1xMinus.wv) / (2 * dx);
+			dwvdP1.col(1) = (q1yPlus.wv - q1yMinus.wv) / (2 * dx);
+			dwvdP1.col(2) = (q1zPlus.wv - q1zMinus.wv) / (2 * dx);
+			checkMatrixEquality(dwvdP1, q.dwvdP1, tol);
+
+			BendCondition<double>::Matrix3 dwvdP2;
+			dwvdP2.col(0) = (q2xPlus.wv - q2xMinus.wv) / (2 * dx);
+			dwvdP2.col(1) = (q2yPlus.wv - q2yMinus.wv) / (2 * dx);
+			dwvdP2.col(2) = (q2zPlus.wv - q2zMinus.wv) / (2 * dx);
+			checkMatrixEquality(dwvdP2, q.dwvdP2, tol);
+
+
+			// test first C derivatives:
+			BendCondition<double>::Vector3 dCdP0;
+			dCdP0[0] = (q0xPlus.C - q0xMinus.C) / (2 * dx);
+			dCdP0[1] = (q0yPlus.C - q0yMinus.C) / (2 * dx);
+			dCdP0[2] = (q0zPlus.C - q0zMinus.C) / (2 * dx);
+			checkVectorEquality(dCdP0, q.dCdP0, tol);
+
+			BendCondition<double>::Vector3 dCdP1;
+			dCdP1[0] = (q1xPlus.C - q1xMinus.C) / (2 * dx);
+			dCdP1[1] = (q1yPlus.C - q1yMinus.C) / (2 * dx);
+			dCdP1[2] = (q1zPlus.C - q1zMinus.C) / (2 * dx);
+			checkVectorEquality(dCdP1, q.dCdP1, tol);
+
+			BendCondition<double>::Vector3 dCdP2;
+			dCdP2[0] = (q2xPlus.C - q2xMinus.C) / (2 * dx);
+			dCdP2[1] = (q2yPlus.C - q2yMinus.C) / (2 * dx);
+			dCdP2[2] = (q2zPlus.C - q2zMinus.C) / (2 * dx);
+			checkVectorEquality(dCdP2, q.dCdP2, tol);
+
+
+			/*
+
+
+			// test second C0 and C1 derivatives:
+			BendCondition<double>::Matrix3 d2C0dP0dP0;
+			d2C0dP0dP0.col(0) = (q0xPlus.dC0dP0 - q0xMinus.dC0dP0) / (2 * dx);
+			d2C0dP0dP0.col(1) = (q0yPlus.dC0dP0 - q0yMinus.dC0dP0) / (2 * dx);
+			d2C0dP0dP0.col(2) = (q0zPlus.dC0dP0 - q0zMinus.dC0dP0) / (2 * dx);
+			checkMatrixEquality(d2C0dP0dP0, q.d2C0dP0dP0, tol);
+
+			BendCondition<double>::Matrix3 d2C0dP0dP1;
+			d2C0dP0dP1.col(0) = (q1xPlus.dC0dP0 - q1xMinus.dC0dP0) / (2 * dx);
+			d2C0dP0dP1.col(1) = (q1yPlus.dC0dP0 - q1yMinus.dC0dP0) / (2 * dx);
+			d2C0dP0dP1.col(2) = (q1zPlus.dC0dP0 - q1zMinus.dC0dP0) / (2 * dx);
+			checkMatrixEquality(d2C0dP0dP1, q.d2C0dP0dP1, tol);
+
+			BendCondition<double>::Matrix3 d2C0dP0dP2;
+			d2C0dP0dP2.col(0) = (q2xPlus.dC0dP0 - q2xMinus.dC0dP0) / (2 * dx);
+			d2C0dP0dP2.col(1) = (q2yPlus.dC0dP0 - q2yMinus.dC0dP0) / (2 * dx);
+			d2C0dP0dP2.col(2) = (q2zPlus.dC0dP0 - q2zMinus.dC0dP0) / (2 * dx);
+			checkMatrixEquality(d2C0dP0dP2, q.d2C0dP0dP2, tol);
+
+
+			BendCondition<double>::Matrix3 d2C0dP1dP0;
+			d2C0dP1dP0.col(0) = (q0xPlus.dC0dP1 - q0xMinus.dC0dP1) / (2 * dx);
+			d2C0dP1dP0.col(1) = (q0yPlus.dC0dP1 - q0yMinus.dC0dP1) / (2 * dx);
+			d2C0dP1dP0.col(2) = (q0zPlus.dC0dP1 - q0zMinus.dC0dP1) / (2 * dx);
+			checkMatrixEquality(d2C0dP1dP0, q.d2C0dP1dP0, tol);
+
+			BendCondition<double>::Matrix3 d2C0dP1dP1;
+			d2C0dP1dP1.col(0) = (q1xPlus.dC0dP1 - q1xMinus.dC0dP1) / (2 * dx);
+			d2C0dP1dP1.col(1) = (q1yPlus.dC0dP1 - q1yMinus.dC0dP1) / (2 * dx);
+			d2C0dP1dP1.col(2) = (q1zPlus.dC0dP1 - q1zMinus.dC0dP1) / (2 * dx);
+			checkMatrixEquality(d2C0dP1dP1, q.d2C0dP1dP1, tol);
+
+			BendCondition<double>::Matrix3 d2C0dP1dP2;
+			d2C0dP1dP2.col(0) = (q2xPlus.dC0dP1 - q2xMinus.dC0dP1) / (2 * dx);
+			d2C0dP1dP2.col(1) = (q2yPlus.dC0dP1 - q2yMinus.dC0dP1) / (2 * dx);
+			d2C0dP1dP2.col(2) = (q2zPlus.dC0dP1 - q2zMinus.dC0dP1) / (2 * dx);
+			checkMatrixEquality(d2C0dP1dP2, q.d2C0dP1dP2, tol);
+
+
+			BendCondition<double>::Matrix3 d2C0dP2dP0;
+			d2C0dP2dP0.col(0) = (q0xPlus.dC0dP2 - q0xMinus.dC0dP2) / (2 * dx);
+			d2C0dP2dP0.col(1) = (q0yPlus.dC0dP2 - q0yMinus.dC0dP2) / (2 * dx);
+			d2C0dP2dP0.col(2) = (q0zPlus.dC0dP2 - q0zMinus.dC0dP2) / (2 * dx);
+			checkMatrixEquality(d2C0dP2dP0, q.d2C0dP2dP0, tol);
+
+			BendCondition<double>::Matrix3 d2C0dP2dP1;
+			d2C0dP2dP1.col(0) = (q1xPlus.dC0dP2 - q1xMinus.dC0dP2) / (2 * dx);
+			d2C0dP2dP1.col(1) = (q1yPlus.dC0dP2 - q1yMinus.dC0dP2) / (2 * dx);
+			d2C0dP2dP1.col(2) = (q1zPlus.dC0dP2 - q1zMinus.dC0dP2) / (2 * dx);
+			checkMatrixEquality(d2C0dP2dP1, q.d2C0dP2dP1, tol);
+
+			BendCondition<double>::Matrix3 d2C0dP2dP2;
+			d2C0dP2dP2.col(0) = (q2xPlus.dC0dP2 - q2xMinus.dC0dP2) / (2 * dx);
+			d2C0dP2dP2.col(1) = (q2yPlus.dC0dP2 - q2yMinus.dC0dP2) / (2 * dx);
+			d2C0dP2dP2.col(2) = (q2zPlus.dC0dP2 - q2zMinus.dC0dP2) / (2 * dx);
+			checkMatrixEquality(d2C0dP2dP2, q.d2C0dP2dP2, tol);
+
+
+
+
+			BendCondition<double>::Matrix3 d2C1dP0dP0;
+			d2C1dP0dP0.col(0) = (q0xPlus.dC1dP0 - q0xMinus.dC1dP0) / (2 * dx);
+			d2C1dP0dP0.col(1) = (q0yPlus.dC1dP0 - q0yMinus.dC1dP0) / (2 * dx);
+			d2C1dP0dP0.col(2) = (q0zPlus.dC1dP0 - q0zMinus.dC1dP0) / (2 * dx);
+			checkMatrixEquality(d2C1dP0dP0, q.d2C1dP0dP0, tol);
+
+			BendCondition<double>::Matrix3 d2C1dP0dP1;
+			d2C1dP0dP1.col(0) = (q1xPlus.dC1dP0 - q1xMinus.dC1dP0) / (2 * dx);
+			d2C1dP0dP1.col(1) = (q1yPlus.dC1dP0 - q1yMinus.dC1dP0) / (2 * dx);
+			d2C1dP0dP1.col(2) = (q1zPlus.dC1dP0 - q1zMinus.dC1dP0) / (2 * dx);
+			checkMatrixEquality(d2C1dP0dP1, q.d2C1dP0dP1, tol);
+
+			BendCondition<double>::Matrix3 d2C1dP0dP2;
+			d2C1dP0dP2.col(0) = (q2xPlus.dC1dP0 - q2xMinus.dC1dP0) / (2 * dx);
+			d2C1dP0dP2.col(1) = (q2yPlus.dC1dP0 - q2yMinus.dC1dP0) / (2 * dx);
+			d2C1dP0dP2.col(2) = (q2zPlus.dC1dP0 - q2zMinus.dC1dP0) / (2 * dx);
+			checkMatrixEquality(d2C1dP0dP2, q.d2C1dP0dP2, tol);
+
+
+			BendCondition<double>::Matrix3 d2C1dP1dP0;
+			d2C1dP1dP0.col(0) = (q0xPlus.dC1dP1 - q0xMinus.dC1dP1) / (2 * dx);
+			d2C1dP1dP0.col(1) = (q0yPlus.dC1dP1 - q0yMinus.dC1dP1) / (2 * dx);
+			d2C1dP1dP0.col(2) = (q0zPlus.dC1dP1 - q0zMinus.dC1dP1) / (2 * dx);
+			checkMatrixEquality(d2C1dP1dP0, q.d2C1dP1dP0, tol);
+
+			BendCondition<double>::Matrix3 d2C1dP1dP1;
+			d2C1dP1dP1.col(0) = (q1xPlus.dC1dP1 - q1xMinus.dC1dP1) / (2 * dx);
+			d2C1dP1dP1.col(1) = (q1yPlus.dC1dP1 - q1yMinus.dC1dP1) / (2 * dx);
+			d2C1dP1dP1.col(2) = (q1zPlus.dC1dP1 - q1zMinus.dC1dP1) / (2 * dx);
+			checkMatrixEquality(d2C1dP1dP1, q.d2C1dP1dP1, tol);
+
+			BendCondition<double>::Matrix3 d2C1dP1dP2;
+			d2C1dP1dP2.col(0) = (q2xPlus.dC1dP1 - q2xMinus.dC1dP1) / (2 * dx);
+			d2C1dP1dP2.col(1) = (q2yPlus.dC1dP1 - q2yMinus.dC1dP1) / (2 * dx);
+			d2C1dP1dP2.col(2) = (q2zPlus.dC1dP1 - q2zMinus.dC1dP1) / (2 * dx);
+			checkMatrixEquality(d2C1dP1dP2, q.d2C1dP1dP2, tol);
+
+
+			BendCondition<double>::Matrix3 d2C1dP2dP0;
+			d2C1dP2dP0.col(0) = (q0xPlus.dC1dP2 - q0xMinus.dC1dP2) / (2 * dx);
+			d2C1dP2dP0.col(1) = (q0yPlus.dC1dP2 - q0yMinus.dC1dP2) / (2 * dx);
+			d2C1dP2dP0.col(2) = (q0zPlus.dC1dP2 - q0zMinus.dC1dP2) / (2 * dx);
+			checkMatrixEquality(d2C1dP2dP0, q.d2C1dP2dP0, tol);
+
+			BendCondition<double>::Matrix3 d2C1dP2dP1;
+			d2C1dP2dP1.col(0) = (q1xPlus.dC1dP2 - q1xMinus.dC1dP2) / (2 * dx);
+			d2C1dP2dP1.col(1) = (q1yPlus.dC1dP2 - q1yMinus.dC1dP2) / (2 * dx);
+			d2C1dP2dP1.col(2) = (q1zPlus.dC1dP2 - q1zMinus.dC1dP2) / (2 * dx);
+			checkMatrixEquality(d2C1dP2dP1, q.d2C1dP2dP1, tol);
+
+			BendCondition<double>::Matrix3 d2C1dP2dP2;
+			d2C1dP2dP2.col(0) = (q2xPlus.dC1dP2 - q2xMinus.dC1dP2) / (2 * dx);
+			d2C1dP2dP2.col(1) = (q2yPlus.dC1dP2 - q2yMinus.dC1dP2) / (2 * dx);
+			d2C1dP2dP2.col(2) = (q2zPlus.dC1dP2 - q2zMinus.dC1dP2) / (2 * dx);
+			checkMatrixEquality(d2C1dP2dP2, q.d2C1dP2dP2, tol);
+			*/
+
 		}
 
-		void checkVectorEquality(Eigen::VectorXd v0, Eigen::VectorXd v1, double tol, bool relative=false)
+
+		TEST_METHOD(TestShearConditionTriangleQuantities)
 		{
-			if (relative)
+			Eigen::VectorXd uv(3 * 2);
+
+			uv[2 * 0] = 1.0;
+			uv[2 * 0 + 1] = 2.0;
+
+			uv[2 * 1] = 6.0;
+			uv[2 * 1 + 1] = 3.0;
+
+			uv[2 * 2] = 2.0;
+			uv[2 * 2 + 1] = 5.0;
+
+			Eigen::Vector3d p0(1, 2, 3);
+			Eigen::Vector3d wu(1.3, 0.2, -0.1);
+			Eigen::Vector3d wv(-0.5, 1.1, 0.3);
+
+			Eigen::VectorXd x(3 * 3);
+			x.segment<3>(3 * 0) = p0 + wu * uv[2 * 0 + 0] + wv * uv[2 * 0 + 1];
+			x.segment<3>(3 * 1) = p0 + wu * uv[2 * 1 + 0] + wv * uv[2 * 1 + 1];
+			x.segment<3>(3 * 2) = p0 + wu * uv[2 * 2 + 0] + wv * uv[2 * 2 + 1];
+
+			Eigen::VectorXd v = Eigen::VectorXd::Random(3 * 3);
+
+			ShearCondition<double>::TriangleQuantities q(
+				x.segment<3>(3 * 0), x.segment<3>(3 * 1), x.segment<3>(3 * 2),
+				uv.segment<2>(2 * 0), uv.segment<2>(2 * 1), uv.segment<2>(2 * 2),
+				v.segment<3>(3 * 0), v.segment<3>(3 * 1), v.segment<3>(3 * 2)
+				);
+
+			double dx = 0.0001;
+			double tol = 1.e-5;
+
+			// make sure we're calculating wu, wv and a as expected:
+			checkVectorEquality(q.wu, wu, tol);
+			checkVectorEquality(q.wv, wv, tol);
+			Eigen::Vector3d uv0(uv[2 * 0], uv[2 * 0 + 1], 0);
+			Eigen::Vector3d uv1(uv[2 * 1], uv[2 * 1 + 1], 0);
+			Eigen::Vector3d uv2(uv[2 * 2], uv[2 * 2 + 1], 0);
+			Assert::AreEqual(q.a, 0.5 * ((uv1 - uv0).cross(uv2 - uv0)).norm(), tol);
+
+			checkShearTriangleQuantities(x, uv, v, dx, tol);
+
+			// test for 10 random configurations:
+			for (int i = 0; i < 10; ++i)
 			{
-				for (int i = 0; i < v0.size(); ++i)
-				{
-					if (fabs(v0[i]) > 0.01)
-					{
-						Assert::AreEqual(v0[i], v1[i], tol*v0[i]);
-					}
-					else
-					{
-						Assert::AreEqual(v0[i], v1[i], tol);
-					}
-				}
+				// randomize the positions:
+				x = Eigen::VectorXd::Random(3 * 3);
+				uv = Eigen::VectorXd::Random(3 * 2);
+				v = Eigen::VectorXd::Random(3 * 3);
+				checkShearTriangleQuantities(x, uv, v, dx, tol);
 			}
-			else
-			{
-				for (int i = 0; i < v0.size(); ++i)
-				{
-					Assert::AreEqual(v0[i], v1[i], tol);
-				}
-			}
+
 		}
 
 		TEST_METHOD(TestBendCondition)
@@ -1027,7 +1240,7 @@ namespace UnitTest1
 
 			// compare to numerically computed forces:
 			double dx = 0.0001;
-			double tol = 1.e-4;
+			double tol = 1.e-3;
 			Assert::AreEqual(numericalForce(bc, uv, x, k, 0, dx), f[0], tol);
 			Assert::AreEqual(numericalForce(bc, uv, x, k, 1, dx), f[1], tol);
 			Assert::AreEqual(numericalForce(bc, uv, x, k, 2, dx), f[2], tol);
@@ -1162,8 +1375,119 @@ namespace UnitTest1
 
 		TEST_METHOD(TestShearCondition)
 		{
-			Eigen::VectorXf x(30);
-			ShearCondition<double> s(0, 1, 2, 1.0);
+			Eigen::VectorXd uv(3 * 2);
+
+			uv[2 * 0] = 1.0;
+			uv[2 * 0 + 1] = 2.0;
+
+			uv[2 * 1] = 6.0;
+			uv[2 * 1 + 1] = 3.0;
+
+			uv[2 * 2] = 2.0;
+			uv[2 * 2 + 1] = 5.0;
+
+			Eigen::Vector3d p0(1, 2, 3);
+			Eigen::Vector3d wu(1.3, 0.2, -0.1);
+			Eigen::Vector3d wv(-0.5, 1.1, 0.3);
+
+			Eigen::VectorXd x(3 * 3);
+			x.segment<3>(3 * 0) = p0 + wu * uv[2 * 0 + 0] + wv * uv[2 * 0 + 1];
+			x.segment<3>(3 * 1) = p0 + wu * uv[2 * 1 + 0] + wv * uv[2 * 1 + 1];
+			x.segment<3>(3 * 2) = p0 + wu * uv[2 * 2 + 0] + wv * uv[2 * 2 + 1];
+
+			Eigen::VectorXd v(3 * 3);
+
+			v[3 * 0] = 0;
+			v[3 * 0 + 1] = 0;
+			v[3 * 0 + 2] = 0;
+
+			v[3 * 1] = 0;
+			v[3 * 1 + 1] = 0;
+			v[3 * 1 + 2] = 0;
+
+			v[3 * 2] = 0;
+			v[3 * 2 + 1] = 0;
+			v[3 * 2 + 2] = 0;
+
+			double bu = 0.9;
+			double bv = 1.1;
+
+			Eigen::VectorXd f(3 * 3);
+			f.setConstant(0);
+			Eigen::VectorXd dampingForces(3 * 3);
+			dampingForces.setConstant(0);
+			ShearCondition<double> sc(0, 1, 2);
+
+			double k = 1.5;
+			Eigen::SparseMatrix<double> dfdx(3 * 3, 3 * 3);
+			double d = 1.0;
+			Eigen::SparseMatrix<double> dampingPseudoDerivatives(3 * 3, 3 * 3);
+
+			// compute forces analytically:
+			sc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives);
+
+			// compare to numerically computed forces:
+			double dx = 0.0001;
+			double tol = 1.e-4;
+			Assert::AreEqual(numericalForce(sc, uv, x, k, 0, dx), f[0], tol);
+			Assert::AreEqual(numericalForce(sc, uv, x, k, 1, dx), f[1], tol);
+			Assert::AreEqual(numericalForce(sc, uv, x, k, 2, dx), f[2], tol);
+
+			Assert::AreEqual(numericalForce(sc, uv, x, k, 3 + 0, dx), f[3 + 0], tol);
+			Assert::AreEqual(numericalForce(sc, uv, x, k, 3 + 1, dx), f[3 + 1], tol);
+			Assert::AreEqual(numericalForce(sc, uv, x, k, 3 + 2, dx), f[3 + 2], tol);
+
+			Assert::AreEqual(numericalForce(sc, uv, x, k, 6 + 0, dx), f[6 + 0], tol);
+			Assert::AreEqual(numericalForce(sc, uv, x, k, 6 + 1, dx), f[6 + 1], tol);
+			Assert::AreEqual(numericalForce(sc, uv, x, k, 6 + 2, dx), f[6 + 2], tol);
+
+			//for (int i = 0; i < x.size(); ++i)
+			//{
+			//	Eigen::VectorXd fdN = dfdx.row(i);
+			//	checkVectorEquality(fdN, numericalForceDerivative(sc, uv, x, v, k, i, dx), tol, true);
+			//}
+
+			// test on 10 randomized configurations:
+			for (size_t n = 0; n < 10; ++n)
+			{
+				// randomize positions:
+				x = Eigen::VectorXd::Random(3 * 3);
+				f.setConstant(0);
+				for (int i = 0; i < dfdx.outerSize(); ++i)
+				{
+					for (Eigen::SparseMatrix<double>::InnerIterator it(dfdx, i); it; ++it)
+					{
+						it.valueRef() = 0;
+					}
+				}
+				dampingForces.setConstant(0);
+				for (int i = 0; i < dampingPseudoDerivatives.outerSize(); ++i)
+				{
+					for (Eigen::SparseMatrix<double>::InnerIterator it(dampingPseudoDerivatives, i); it; ++it)
+					{
+						it.valueRef() = 0;
+					}
+				}
+				sc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives);
+
+				Assert::AreEqual(numericalForce(sc, uv, x, k, 0, dx), f[0], tol);
+				Assert::AreEqual(numericalForce(sc, uv, x, k, 1, dx), f[1], tol);
+				Assert::AreEqual(numericalForce(sc, uv, x, k, 2, dx), f[2], tol);
+
+				Assert::AreEqual(numericalForce(sc, uv, x, k, 3 + 0, dx), f[3 + 0], tol);
+				Assert::AreEqual(numericalForce(sc, uv, x, k, 3 + 1, dx), f[3 + 1], tol);
+				Assert::AreEqual(numericalForce(sc, uv, x, k, 3 + 2, dx), f[3 + 2], tol);
+
+				Assert::AreEqual(numericalForce(sc, uv, x, k, 6 + 0, dx), f[6 + 0], tol);
+				Assert::AreEqual(numericalForce(sc, uv, x, k, 6 + 1, dx), f[6 + 1], tol);
+				Assert::AreEqual(numericalForce(sc, uv, x, k, 6 + 2, dx), f[6 + 2], tol);
+
+				//for (int i = 0; i < x.size(); ++i)
+				//{
+				//	Eigen::VectorXd fdN = dfdx.row(i);
+				//	checkVectorEquality(fdN, numericalForceDerivative(sc, uv, x, v, k, i, dx), tol, true);
+				//}
+			}
 		}
 
 		TEST_METHOD(TestStretchCondition)

@@ -20,6 +20,9 @@ struct TangentTriangleQuantities
 	Matrix3 dwudP0, dwudP1, dwudP2;
 	Matrix3 dwvdP0, dwvdP1, dwvdP2;
 
+	Real dwudP0Scalar, dwudP1Scalar, dwudP2Scalar;
+	Real dwvdP0Scalar, dwvdP1Scalar, dwvdP2Scalar;
+
 	TangentTriangleQuantities() {}
 	TangentTriangleQuantities(
 		const Vector3 &p0, const Vector3 &p1, const Vector3 &p2,
@@ -42,13 +45,22 @@ struct TangentTriangleQuantities
 		wv = (-(p1 - p0) * du2 + (p2 - p0) * du1) / (2 * a);
 
 		// first derivatives of uv tangents:
-		dwudP0 = Matrix3::Identity() * (dv1 - dv2) / (2 * a);
-		dwudP1 = Matrix3::Identity() * dv2 / (2 * a);
-		dwudP2 = Matrix3::Identity() * -dv1 / (2 * a);
+		dwudP0Scalar = (dv1 - dv2) / (2 * a);
+		dwudP1Scalar = dv2 / (2 * a);
+		dwudP2Scalar = -dv1 / (2 * a);
 
-		dwvdP0 = Matrix3::Identity() * (du2 - du1) / (2 * a);
-		dwvdP1 = Matrix3::Identity() * -du2 / (2 * a);
-		dwvdP2 = Matrix3::Identity() * du1 / (2 * a);
+		dwvdP0Scalar = (du2 - du1) / (2 * a);
+		dwvdP1Scalar = -du2 / (2 * a);
+		dwvdP2Scalar = du1 / (2 * a);
+
+
+		dwudP0 = Matrix3::Identity() * dwudP0Scalar;
+		dwudP1 = Matrix3::Identity() * dwudP1Scalar;
+		dwudP2 = Matrix3::Identity() * dwudP2Scalar;
+
+		dwvdP0 = Matrix3::Identity() * dwvdP0Scalar;
+		dwvdP1 = Matrix3::Identity() * dwvdP1Scalar;
+		dwvdP2 = Matrix3::Identity() * dwvdP2Scalar;
 
 	}
 };
