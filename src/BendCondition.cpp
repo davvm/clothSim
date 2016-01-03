@@ -202,7 +202,8 @@ void BendCondition<Real>::computeForces(
 	const Vector& v,
 	Real d,
 	Vector &dampingForces,
-	SparseMatrix &dampingPseudoDerivatives
+	SparseMatrix &dampingPseudoXDerivatives,
+	SparseMatrix &dddv
 ) const
 {
 	
@@ -273,7 +274,7 @@ void BendCondition<Real>::computeForces(
 		}
 	}
 
-	// compute damping forces and pseudo derivatives:
+	// compute damping forces and v derivatives:
 
 	// fd = -d * dTheta/dt * dTheta/dx:
 
@@ -282,49 +283,49 @@ void BendCondition<Real>::computeForces(
 	dampingForces.segment<3>(3 * m_inds[2]) -= d * q.dThetadt * q.dThetadP2;
 	dampingForces.segment<3>(3 * m_inds[3]) -= d * q.dThetadt * q.dThetadP3;
 
-	Matrix3 dfd0dP0 = -d * (q.dThetadP0 * q.dThetadP0.transpose());
-	Matrix3 dfd0dP1 = -d * (q.dThetadP0 * q.dThetadP1.transpose());
-	Matrix3 dfd0dP2 = -d * (q.dThetadP0 * q.dThetadP2.transpose());
-	Matrix3 dfd0dP3 = -d * (q.dThetadP0 * q.dThetadP3.transpose());
+	Matrix3 dfd0dV0 = -d * (q.dThetadP0 * q.dThetadP0.transpose());
+	Matrix3 dfd0dV1 = -d * (q.dThetadP0 * q.dThetadP1.transpose());
+	Matrix3 dfd0dV2 = -d * (q.dThetadP0 * q.dThetadP2.transpose());
+	Matrix3 dfd0dV3 = -d * (q.dThetadP0 * q.dThetadP3.transpose());
 
-	Matrix3 dfd1dP0 = -d * (q.dThetadP1 * q.dThetadP0.transpose());
-	Matrix3 dfd1dP1 = -d * (q.dThetadP1 * q.dThetadP1.transpose());
-	Matrix3 dfd1dP2 = -d * (q.dThetadP1 * q.dThetadP2.transpose());
-	Matrix3 dfd1dP3 = -d * (q.dThetadP1 * q.dThetadP3.transpose());
+	Matrix3 dfd1dV0 = -d * (q.dThetadP1 * q.dThetadP0.transpose());
+	Matrix3 dfd1dV1 = -d * (q.dThetadP1 * q.dThetadP1.transpose());
+	Matrix3 dfd1dV2 = -d * (q.dThetadP1 * q.dThetadP2.transpose());
+	Matrix3 dfd1dV3 = -d * (q.dThetadP1 * q.dThetadP3.transpose());
 
-	Matrix3 dfd2dP0 = -d * (q.dThetadP2 * q.dThetadP0.transpose());
-	Matrix3 dfd2dP1 = -d * (q.dThetadP2 * q.dThetadP1.transpose());
-	Matrix3 dfd2dP2 = -d * (q.dThetadP2 * q.dThetadP2.transpose());
-	Matrix3 dfd2dP3 = -d * (q.dThetadP2 * q.dThetadP3.transpose());
+	Matrix3 dfd2dV0 = -d * (q.dThetadP2 * q.dThetadP0.transpose());
+	Matrix3 dfd2dV1 = -d * (q.dThetadP2 * q.dThetadP1.transpose());
+	Matrix3 dfd2dV2 = -d * (q.dThetadP2 * q.dThetadP2.transpose());
+	Matrix3 dfd2dV3 = -d * (q.dThetadP2 * q.dThetadP3.transpose());
 
-	Matrix3 dfd3dP0 = -d * (q.dThetadP3 * q.dThetadP0.transpose());
-	Matrix3 dfd3dP1 = -d * (q.dThetadP3 * q.dThetadP1.transpose());
-	Matrix3 dfd3dP2 = -d * (q.dThetadP3 * q.dThetadP2.transpose());
-	Matrix3 dfd3dP3 = -d * (q.dThetadP3 * q.dThetadP3.transpose());
+	Matrix3 dfd3dV0 = -d * (q.dThetadP3 * q.dThetadP0.transpose());
+	Matrix3 dfd3dV1 = -d * (q.dThetadP3 * q.dThetadP1.transpose());
+	Matrix3 dfd3dV2 = -d * (q.dThetadP3 * q.dThetadP2.transpose());
+	Matrix3 dfd3dV3 = -d * (q.dThetadP3 * q.dThetadP3.transpose());
 
 	for (int i = 0; i < 3; ++i)
 	{
 		for (int j = 0; j < 3; ++j)
 		{
-			dampingPseudoDerivatives.coeffRef(3 * m_inds[0] + i, 3 * m_inds[0] + j) += dfd0dP0(i, j);
-			dampingPseudoDerivatives.coeffRef(3 * m_inds[0] + i, 3 * m_inds[1] + j) += dfd0dP1(i, j);
-			dampingPseudoDerivatives.coeffRef(3 * m_inds[0] + i, 3 * m_inds[2] + j) += dfd0dP2(i, j);
-			dampingPseudoDerivatives.coeffRef(3 * m_inds[0] + i, 3 * m_inds[3] + j) += dfd0dP3(i, j);
+			dddv.coeffRef(3 * m_inds[0] + i, 3 * m_inds[0] + j) += dfd0dV0(i, j);
+			dddv.coeffRef(3 * m_inds[0] + i, 3 * m_inds[1] + j) += dfd0dV1(i, j);
+			dddv.coeffRef(3 * m_inds[0] + i, 3 * m_inds[2] + j) += dfd0dV2(i, j);
+			dddv.coeffRef(3 * m_inds[0] + i, 3 * m_inds[3] + j) += dfd0dV3(i, j);
 
-			dampingPseudoDerivatives.coeffRef(3 * m_inds[1] + i, 3 * m_inds[0] + j) += dfd1dP0(i, j);
-			dampingPseudoDerivatives.coeffRef(3 * m_inds[1] + i, 3 * m_inds[1] + j) += dfd1dP1(i, j);
-			dampingPseudoDerivatives.coeffRef(3 * m_inds[1] + i, 3 * m_inds[2] + j) += dfd1dP2(i, j);
-			dampingPseudoDerivatives.coeffRef(3 * m_inds[1] + i, 3 * m_inds[3] + j) += dfd1dP3(i, j);
+			dddv.coeffRef(3 * m_inds[1] + i, 3 * m_inds[0] + j) += dfd1dV0(i, j);
+			dddv.coeffRef(3 * m_inds[1] + i, 3 * m_inds[1] + j) += dfd1dV1(i, j);
+			dddv.coeffRef(3 * m_inds[1] + i, 3 * m_inds[2] + j) += dfd1dV2(i, j);
+			dddv.coeffRef(3 * m_inds[1] + i, 3 * m_inds[3] + j) += dfd1dV3(i, j);
 
-			dampingPseudoDerivatives.coeffRef(3 * m_inds[2] + i, 3 * m_inds[0] + j) += dfd2dP0(i, j);
-			dampingPseudoDerivatives.coeffRef(3 * m_inds[2] + i, 3 * m_inds[1] + j) += dfd2dP1(i, j);
-			dampingPseudoDerivatives.coeffRef(3 * m_inds[2] + i, 3 * m_inds[2] + j) += dfd2dP2(i, j);
-			dampingPseudoDerivatives.coeffRef(3 * m_inds[2] + i, 3 * m_inds[3] + j) += dfd2dP3(i, j);
+			dddv.coeffRef(3 * m_inds[2] + i, 3 * m_inds[0] + j) += dfd2dV0(i, j);
+			dddv.coeffRef(3 * m_inds[2] + i, 3 * m_inds[1] + j) += dfd2dV1(i, j);
+			dddv.coeffRef(3 * m_inds[2] + i, 3 * m_inds[2] + j) += dfd2dV2(i, j);
+			dddv.coeffRef(3 * m_inds[2] + i, 3 * m_inds[3] + j) += dfd2dV3(i, j);
 
-			dampingPseudoDerivatives.coeffRef(3 * m_inds[3] + i, 3 * m_inds[0] + j) += dfd3dP0(i, j);
-			dampingPseudoDerivatives.coeffRef(3 * m_inds[3] + i, 3 * m_inds[1] + j) += dfd3dP1(i, j);
-			dampingPseudoDerivatives.coeffRef(3 * m_inds[3] + i, 3 * m_inds[2] + j) += dfd3dP2(i, j);
-			dampingPseudoDerivatives.coeffRef(3 * m_inds[3] + i, 3 * m_inds[3] + j) += dfd3dP3(i, j);
+			dddv.coeffRef(3 * m_inds[3] + i, 3 * m_inds[0] + j) += dfd3dV0(i, j);
+			dddv.coeffRef(3 * m_inds[3] + i, 3 * m_inds[1] + j) += dfd3dV1(i, j);
+			dddv.coeffRef(3 * m_inds[3] + i, 3 * m_inds[2] + j) += dfd3dV2(i, j);
+			dddv.coeffRef(3 * m_inds[3] + i, 3 * m_inds[3] + j) += dfd3dV3(i, j);
 		}
 	}
 }

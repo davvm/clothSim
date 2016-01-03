@@ -386,9 +386,10 @@ namespace UnitTest1
 			Eigen::SparseMatrix<double> dfdx(3 * 3, 3 * 3);
 			double d = 1.0;
 			Eigen::SparseMatrix<double> dampingPseudoDerivatives(3 * 3, 3 * 3);
+			Eigen::SparseMatrix<double> dfdv(3 * 3, 3 * 3);
 
 			// compute forces analytically:
-			sc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives);
+			sc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives, dfdv);
 
 			// compare to numerically computed forces:
 			double dx = 0.0001;
@@ -432,7 +433,7 @@ namespace UnitTest1
 						it.valueRef() = 0;
 					}
 				}
-				sc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives);
+				sc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives, dfdv);
 
 				Assert::AreEqual(numericalForce(sc, uv, x, k, 0, dx), f[0], tol);
 				Assert::AreEqual(numericalForce(sc, uv, x, k, 1, dx), f[1], tol);

@@ -14,7 +14,7 @@ public:
 
 	virtual Vector C(const Vector& x, const Vector& uv) const;
 
-	virtual void computeForces(const Vector& x, const Vector& uv, Real k, Vector& forces, SparseMatrix &dfdx, const Vector& v, Real d, Vector &dampingForces, SparseMatrix &dampingPseudoDerivatives) const;
+	virtual void computeForces(const Vector& x, const Vector& uv, Real k, Vector& forces, SparseMatrix &dfdx, const Vector& v, Real d, Vector &dampingForces, SparseMatrix &dampingPseudoXDerivatives, SparseMatrix &dddv) const;
 
 	struct TriangleQuantities
 	{
@@ -63,6 +63,11 @@ public:
 		Matrix3 d2ThetadP2dP0, d2ThetadP2dP1, d2ThetadP2dP2, d2ThetadP2dP3;
 		Matrix3 d2ThetadP3dP0, d2ThetadP3dP1, d2ThetadP3dP2, d2ThetadP3dP3;
 	};
+
+	int const *inds() const
+	{
+		return m_inds;
+	}
 
 private:
 

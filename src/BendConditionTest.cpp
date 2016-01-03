@@ -598,6 +598,7 @@ namespace UnitTest1
 			Eigen::SparseMatrix<double> dfdx(5 * 3, 5 * 3);
 			double d = 1.0;
 			Eigen::SparseMatrix<double> dampingPseudoDerivatives(5 * 3, 5 * 3);
+			Eigen::SparseMatrix<double> dfdv(5 * 3, 5 * 3);
 
 			// check we've got the energy condition right, and we're measuring the angle between the normals:
 			Eigen::VectorXd c;
@@ -605,7 +606,7 @@ namespace UnitTest1
 			Assert::AreEqual(c[0], 2 * atan(0.2), 1.e-4);
 
 			// compute forces analytically:
-			bc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives);
+			bc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives, dfdv);
 
 			// sanity check: forces should be opposing the bend, so the ones on x0,x3 should be pointing down,
 			// the ones on x1,x2 should be pointing up:
@@ -670,7 +671,7 @@ namespace UnitTest1
 					it.valueRef() = 0;
 				}
 			}
-			bc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives);
+			bc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives, dfdv);
 
 			// sanity check: forces should be opposing the bend, so now the ones on x0,x3 should be pointing up,
 			// and the ones on x1,x2 should be pointing down:
@@ -729,7 +730,7 @@ namespace UnitTest1
 						it.valueRef() = 0;
 					}
 				}
-				bc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives);
+				bc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives, dfdv);
 
 				Assert::AreEqual(numericalForce(bc, uv, x, k, 0, dx), f[0], tol);
 				Assert::AreEqual(numericalForce(bc, uv, x, k, 1, dx), f[1], tol);

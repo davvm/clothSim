@@ -26,5 +26,8 @@
     <ClCompile Include="src\EqualityTests.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\ClothMeshTest.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

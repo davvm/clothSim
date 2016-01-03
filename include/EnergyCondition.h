@@ -23,7 +23,7 @@ public:
 	virtual Vector C(const Vector& x, const Vector& uv) const = 0;
 
 	// computes forces and their derivatives:
-	virtual void computeForces(const Vector& x, const Vector& uv, Real k, Vector& forces, SparseMatrix &dfdx, const Vector& v, Real d, Vector &dampingForces, SparseMatrix &dampingPseudoDerivatives) const = 0;
+	virtual void computeForces(const Vector& x, const Vector& uv, Real k, Vector& forces, SparseMatrix &dfdx, const Vector& v, Real d, Vector &dampingForces, SparseMatrix &dampingPseudoXDerivatives, SparseMatrix &dddv ) const = 0;
 
 };
 

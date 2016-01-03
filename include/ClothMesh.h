@@ -22,7 +22,7 @@ public:
 	ClothMesh(
 		const Vector &x,
 		const Vector &v,
-		const Vector &m_uv,
+		const Vector &uv,
 		const std::vector<int> &triangleIndices,
 		Real kBend, Real kStretch, Real kShear,
 		Real dBend, Real dStretch, Real dShear,
@@ -34,6 +34,14 @@ public:
 
 	// accessor for velocities:
 	const Vector &v() const;
+
+	// accessor for masses:
+	const Vector &m() const;
+
+	// accessors for the energy terms:
+	const std::vector< BendCondition<Real> > &bendConditions() const;
+	const std::vector< ShearCondition<Real> > &shearConditions() const;
+	const std::vector< StretchCondition<Real> > &stretchConditions() const;
 
 	// advance the simulation:
 	void advance(Real dt, const LinearSolver<Real> &solver);

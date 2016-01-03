@@ -30,24 +30,35 @@ ClothMesh<Real>::ClothMesh(
 	m_x(x),
 	m_v(v),
 	m_uv(uv),
-	m_m((int)m_uv.size() / 2),
+	m_m((int)uv.size() / 2),
 	m_dfdx((int)x.size(), (int)x.size()),
 	m_dfdv((int)x.size(), (int)x.size()),
 	m_implicitUpdateMatrix((int)x.size(), (int)x.size()),
 	m_implicitUpdateRHS((int)x.size()),
 	m_forces((int)x.size())
 {
+	m_m.setConstant(0);
 	for(size_t i = 0; i < triangleIndices.size(); i += 3 )
 	{
 		// add stretch and shear terms to the equations of motion:
-		m_shearConditions.push_back(ShearCondition<Real>((int)i, (int)i + 1, (int)i + 2));
-		m_stretchConditions.push_back(StretchCondition<Real>((int)i, (int)i + 1, (int)i + 2,1,1));
+		m_shearConditions.push_back(ShearCondition<Real>(triangleIndices[i + 0], triangleIndices[i + 1], triangleIndices[i + 2]));
+		m_stretchConditions.push_back(StretchCondition<Real>(triangleIndices[i + 0], triangleIndices[i + 1], triangleIndices[i + 2], 1, 1));
 
-		// find triangle area:
-		const Vector3 &p0 = m_x.segment<3>(3 * triangleIndices[i+0]);
-		const Vector3 &p1 = m_x.segment<3>(3 * triangleIndices[i + 1]);
-		const Vector3 &p2 = m_x.segment<3>(3 * triangleIndices[i + 2]);
-		Real area = (p1 - p0).cross(p2 - p0).norm() / 2;
+		// find triangle rest area:
+		const Vector2 &uv0 = m_uv.segment<2>(2 * triangleIndices[i+0]);
+		const Vector2 &uv1 = m_uv.segment<2>(2 * triangleIndices[i + 1]);
+		const Vector2 &uv2 = m_uv.segment<2>(2 * triangleIndices[i + 2]);
+		
+		Vector2 duv1 = uv1 - uv0;
+		Vector2 duv2 = uv2 - uv0;
+
+		Real du1 = duv1[0];
+		Real dv1 = duv1[1];
+		Real du2 = duv2[0];
+		Real dv2 = duv2[1];
+
+		// triangle area in reference pose:
+		Real area = Real(0.5) * abs(du1 * dv2 - du2 * dv1);
 
 		// calculate triangle mass and distribute it equally over the 3 vertices:
 		Real triangleMass = area * density;
@@ -60,7 +71,7 @@ ClothMesh<Real>::ClothMesh(
 	// Doing it in a dumb slow way right now just so it works:
 	for(size_t i = 0; i < triangleIndices.size(); i += 3)
 	{
-		for(size_t j = i + 1; j < triangleIndices.size(); j += 3)
+		for(size_t j = i + 3; j < triangleIndices.size(); j += 3)
 		{
 			std::vector<int> shared = sharedVertices(triangleIndices, i, j);
 			if(shared.size() == 2)
@@ -81,9 +92,9 @@ ClothMesh<Real>::ClothMesh(
 				int i3;
 				for (size_t n = 0; n < 3; ++n)
 				{
-					if (triangleIndices[i + n] != i1 && triangleIndices[i + n] != i2)
+					if (triangleIndices[j + n] != i1 && triangleIndices[j + n] != i2)
 					{
-						i3 = triangleIndices[i + n];
+						i3 = triangleIndices[j + n];
 						break;
 					}
 				}
@@ -104,6 +115,30 @@ template<class Real>
 const typename ClothMesh<Real>::Vector &ClothMesh<Real>::v() const
 {
 	return m_v;
+}
+
+// accessor for masses:
+template<class Real>
+const typename ClothMesh<Real>::Vector &ClothMesh<Real>::m() const
+{
+	return m_m;
+}
+template<class Real>
+const std::vector< BendCondition<Real> > &ClothMesh<Real>::bendConditions() const
+{
+	return m_bendConditions;
+}
+
+template<class Real>
+const std::vector< ShearCondition<Real> > &ClothMesh<Real>::shearConditions() const
+{
+	return m_shearConditions;
+}
+
+template<class Real>
+const std::vector< StretchCondition<Real> > &ClothMesh<Real>::stretchConditions() const
+{
+	return m_stretchConditions;
 }
 
 // advance the simulation:
@@ -141,19 +176,19 @@ void ClothMesh<Real>::advance(Real dt, const LinearSolver<Real> &solver)
 	// add the bend terms:
 	for (size_t i = 0; i < m_bendConditions.size(); ++i)
 	{
-		m_bendConditions[i].computeForces(m_x, m_uv, m_kShear, m_forces, m_dfdx, m_v, m_dShear, m_forces, m_dfdv);
+		m_bendConditions[i].computeForces(m_x, m_uv, m_kShear, m_forces, m_dfdx, m_v, m_dShear, m_forces, m_dfdx, m_dfdv);
 	}
 
 	// add the stretch terms:
 	for (size_t i = 0; i < m_stretchConditions.size(); ++i)
 	{
-		m_stretchConditions[i].computeForces(m_x, m_uv, m_kShear, m_forces, m_dfdx, m_v, m_dShear, m_forces, m_dfdv);
+		m_stretchConditions[i].computeForces(m_x, m_uv, m_kShear, m_forces, m_dfdx, m_v, m_dShear, m_forces, m_dfdx, m_dfdv);
 	}
 
 	// add the shear terms:
 	for (size_t i = 0; i < m_shearConditions.size(); ++i)
 	{
-		m_shearConditions[i].computeForces(m_x, m_uv, m_kShear, m_forces, m_dfdx, m_v, m_dShear, m_forces, m_dfdv);
+		m_shearConditions[i].computeForces(m_x, m_uv, m_kShear, m_forces, m_dfdx, m_v, m_dShear, m_forces, m_dfdx, m_dfdv);
 	}
 
 	// The implicit update system we want to solve is this:

@@ -65,6 +65,7 @@ double numericalForce(const EnergyCondition<double> &c, const Eigen::VectorXd &u
 Eigen::VectorXd numericalForceDerivative(const EnergyCondition<double> &c, const Eigen::VectorXd &uv, Eigen::VectorXd &x, Eigen::VectorXd &v, double k, int i, double dx)
 {
 	Eigen::SparseMatrix<double> dfdx((int)x.size(), (int)x.size());
+	Eigen::SparseMatrix<double> dfdv((int)x.size(), (int)x.size());
 	double d = 1.0;
 	Eigen::VectorXd dampingForces((int)x.size());
 	Eigen::SparseMatrix<double> dampingPseudoDerivatives((int)x.size(), (int)x.size());
@@ -75,13 +76,13 @@ Eigen::VectorXd numericalForceDerivative(const EnergyCondition<double> &c, const
 
 	Eigen::VectorXd fPlus(x.size());
 	fPlus.setConstant(0);
-	c.computeForces(x, uv, k, fPlus, dfdx, v, d, dampingForces, dampingPseudoDerivatives);
+	c.computeForces(x, uv, k, fPlus, dfdx, v, d, dampingForces, dampingPseudoDerivatives, dfdv);
 
 	x[i] = xOrig - dx;
 
 	Eigen::VectorXd fMinus(x.size());
 	fMinus.setConstant(0);
-	c.computeForces(x, uv, k, fMinus, dfdx, v, d, dampingForces, dampingPseudoDerivatives);
+	c.computeForces(x, uv, k, fMinus, dfdx, v, d, dampingForces, dampingPseudoDerivatives, dfdv);
 
 	x[i] = xOrig;
 

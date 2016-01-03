@@ -15,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BendConditionTest.cpp" />
+    <ClCompile Include="src\ClothMeshTest.cpp" />
     <ClCompile Include="src\EqualityTests.cpp" />
     <ClCompile Include="src\ShearConditionTest.cpp" />
     <ClCompile Include="src\StretchConditionTest.cpp" />
