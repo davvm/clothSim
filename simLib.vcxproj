@@ -17,6 +17,7 @@
   <ItemGroup>
     <ClCompile Include="src\BendCondition.cpp" />
     <ClCompile Include="src\ClothMesh.cpp" />
+    <ClCompile Include="src\DirectSolver.cpp" />
     <ClCompile Include="src\ShearCondition.cpp" />
     <ClCompile Include="src\StretchCondition.cpp" />
   </ItemGroup>
@@ -24,6 +25,7 @@
     <ClInclude Include="include\BendCondition.h" />
     <ClInclude Include="include\ClothMesh.h" />
     <ClInclude Include="include\EnergyCondition.h" />
+    <ClInclude Include="include\DirectSolver.h" />
     <ClInclude Include="include\LinearSolver.h" />
     <ClInclude Include="include\ShearCondition.h" />
     <ClInclude Include="include\StretchCondition.h" />

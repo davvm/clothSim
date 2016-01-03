@@ -13,6 +13,9 @@
     <ClCompile Include="src\ClothMesh.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\DirectSolver.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\BendCondition.h">
@@ -34,6 +37,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\LinearSolver.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DirectSolver.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
