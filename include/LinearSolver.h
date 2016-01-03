@@ -15,7 +15,7 @@ public:
 	typedef Eigen::SparseMatrix<Real> SparseMatrix;
 
 	// perform a linear solve (A * result = rhs):
-	virtual void solve( const SparseMatrix &A, const Vector &rhs, Vector &result ) = 0;
+	virtual void solve( const SparseMatrix &A, const Vector &rhs, Vector &result ) const = 0;
 
 };
 
