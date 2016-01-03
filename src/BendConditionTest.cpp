@@ -535,6 +535,11 @@ namespace UnitTest1
 			}
 		}
 
+		TEST_METHOD(YouNeedToImplementDdDxAndDdDvAreNotPseudoDerivativesPleaseTestThem)
+		{
+			Assert::IsTrue(false);
+		}
+
 		TEST_METHOD(TestBendCondition)
 		{
 
