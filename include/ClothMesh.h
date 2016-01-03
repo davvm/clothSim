@@ -25,7 +25,8 @@ public:
 		const Vector &m_uv,
 		const std::vector<int> &triangleIndices,
 		Real kBend, Real kStretch, Real kShear,
-		Real dBend, Real dStretch, Real dShear
+		Real dBend, Real dStretch, Real dShear,
+		Real density
 	);
 
 	// accessor for positions:
@@ -44,6 +45,9 @@ private:
 
 	// velocities:
 	Vector m_v;
+
+	// masses:
+	Vector m_m;
 
 	// reference pose:
 	const Vector m_uv;
@@ -64,8 +68,11 @@ private:
 
 	// solver data:
 	SparseMatrix m_dfdx;
+	SparseMatrix m_dfdv;
 	SparseMatrix m_implicitUpdateMatrix;
 	Vector m_implicitUpdateRHS;
+	Vector m_forces;
+	Vector m_dv;
 
 };
 
