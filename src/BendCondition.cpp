@@ -328,6 +328,19 @@ void BendCondition<Real>::computeForces(
 			dddv.coeffRef(3 * m_inds[3] + i, 3 * m_inds[3] + j) += dfd3dV3(i, j);
 		}
 	}
+
+	// Damping force x derivatives are given by:
+
+	// -kd ( dc/dpi pc/dpi^T + d2c/dpidpj dc/dt )
+
+	// Unfortunately, the first term isn't symmetric, so it messes up the
+	// linear solver. However, apparently it's quite small in practice so
+	// you can leave it out, hence the name dampingForcePseudoXDerivatives.
+	// see page 6 of http://www.cs.cmu.edu/~baraff/papers/sig98.pdf for
+	// details.
+
+	// Therefore, lets compute -kd * d2c/dpidpj dc/dt:
+
 }
 
 template class BendCondition<float>;

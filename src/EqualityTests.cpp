@@ -49,24 +49,46 @@ void checkMatrixEquality(Eigen::Matrix3d m0, Eigen::Matrix3d m1, double tol)
 	Microsoft::VisualStudio::CppUnitTestFramework::Assert::AreEqual(m0(2, 2), m1(2, 2), tol);
 }
 
-double numericalForce(const EnergyCondition<double> &c, const Eigen::VectorXd &uv, Eigen::VectorXd &x, double k, int i, double dx)
+double numericalForce(const EnergyCondition<double> &c, const Eigen::VectorXd &uv, const Eigen::VectorXd &x, double k, int i, double dx)
 {
-	double xOrig = x[i];
-	x[i] = xOrig + dx;
-	double ePlus = 0.5 * c.C(x, uv).squaredNorm();
-	x[i] = xOrig - dx;
-	double eMinus = 0.5 * c.C(x, uv).squaredNorm();
-	x[i] = xOrig;
+	Eigen::VectorXd xtest = x;
+	xtest[i] = x[i] + dx;
+	double ePlus = 0.5 * c.C(xtest, uv).squaredNorm();
+	xtest[i] = x[i] - dx;
+	double eMinus = 0.5 * c.C(xtest, uv).squaredNorm();
 
-	// f = -dE/dx
+	// f = -k * dE/dx
 	return -k * (ePlus - eMinus) / (2 * dx);
 }
 
-Eigen::VectorXd numericalForceDerivative(const EnergyCondition<double> &c, const Eigen::VectorXd &uv, Eigen::VectorXd &x, Eigen::VectorXd &v, double k, int i, double dx)
+double numericalDampingForce(const EnergyCondition<double> &c, const Eigen::VectorXd &uv, const Eigen::VectorXd &x, const Eigen::VectorXd &v, double d, int i, double dx)
+{
+	// find dC/dt
+	Eigen::VectorXd xtest;;
+	xtest = x + dx * v;
+	Eigen::VectorXd cPlus = c.C(xtest, uv);
+	xtest = x - dx * v;
+	Eigen::VectorXd cMinus = c.C(xtest, uv);
+
+	Eigen::VectorXd dCdt = (cPlus - cMinus) / (2 * dx);
+
+	// find dC/dx
+	xtest = x;
+	xtest[i] = x[i] + dx;
+	cPlus = c.C(xtest, uv);
+	xtest[i] = x[i] - dx;
+	cMinus = c.C(xtest, uv);
+
+	Eigen::VectorXd dCdx = (cPlus - cMinus) / (2 * dx);
+	
+	// fd = -d * sum( i, dC_i/dx * dC_i/dt )
+	return -d * (dCdx.array() * dCdt.array()).sum();
+}
+
+Eigen::VectorXd numericalForceDerivative(const EnergyCondition<double> &c, const Eigen::VectorXd &uv, Eigen::VectorXd &x, Eigen::VectorXd &v, double k, double d, int i, double dx)
 {
 	Eigen::SparseMatrix<double> dfdx((int)x.size(), (int)x.size());
 	Eigen::SparseMatrix<double> dfdv((int)x.size(), (int)x.size());
-	double d = 1.0;
 	Eigen::VectorXd dampingForces((int)x.size());
 	Eigen::SparseMatrix<double> dampingPseudoDerivatives((int)x.size(), (int)x.size());
 
@@ -88,4 +110,31 @@ Eigen::VectorXd numericalForceDerivative(const EnergyCondition<double> &c, const
 
 	// df/dx
 	return (fPlus - fMinus) / (2 * dx);
+}
+
+Eigen::VectorXd numericalDampingForceDerivative(const EnergyCondition<double> &c, const Eigen::VectorXd &uv, Eigen::VectorXd &x, Eigen::VectorXd &v, double k, double d, int i, double dx)
+{
+	Eigen::SparseMatrix<double> dfdx((int)x.size(), (int)x.size());
+	Eigen::SparseMatrix<double> dfdv((int)x.size(), (int)x.size());
+	Eigen::VectorXd f((int)x.size());
+	Eigen::SparseMatrix<double> dampingPseudoDerivatives((int)x.size(), (int)x.size());
+
+	double vOrig = v[i];
+
+	v[i] = vOrig + dx;
+
+	Eigen::VectorXd dampingForcePlus(x.size());
+	dampingForcePlus.setConstant(0);
+	c.computeForces(x, uv, k, f, dfdx, v, d, dampingForcePlus, dampingPseudoDerivatives, dfdv);
+
+	v[i] = vOrig - dx;
+
+	Eigen::VectorXd dampingForceMinus(x.size());
+	dampingForceMinus.setConstant(0);
+	c.computeForces(x, uv, k, f, dfdx, v, d, dampingForceMinus, dampingPseudoDerivatives, dfdv);
+
+	v[i] = vOrig;
+
+	// df/dx
+	return (dampingForcePlus - dampingForceMinus) / (2 * dx);
 }
