@@ -102,8 +102,6 @@ void StretchCondition<Real>::computeForces(const Vector& x, const Vector& uv, Re
 	forces.segment<3>(3 * m_inds[1]) -= k * (q.C0 * q.dC0dP1 + q.C1 * q.dC1dP1);
 	forces.segment<3>(3 * m_inds[2]) -= k * (q.C0 * q.dC0dP2 + q.C1 * q.dC1dP2);
 
-
-
 	// compute force derivatives and insert them into the sparse matrix:
 	Matrix3 df0dP0 = -k * (q.dC0dP0 * q.dC0dP0.transpose() + q.C0 * q.d2C0dP0dP0 + q.dC1dP0 * q.dC1dP0.transpose() + q.C1 * q.d2C1dP0dP0);
 	Matrix3 df0dP1 = -k * (q.dC0dP0 * q.dC0dP1.transpose() + q.C0 * q.d2C0dP0dP1 + q.dC1dP0 * q.dC1dP1.transpose() + q.C1 * q.d2C1dP0dP1);
@@ -184,6 +182,36 @@ void StretchCondition<Real>::computeForces(const Vector& x, const Vector& uv, Re
 	// details.
 
 	// Therefore, lets compute -kd * d2c/dpidpj dc/dt:
+	Matrix3 dD0dP0Pseudo = -d * (q.d2C0dP0dP0 * q.dC0dt + q.d2C1dP0dP0 * q.dC1dt);
+	Matrix3 dD1dP0Pseudo = -d * (q.d2C0dP1dP0 * q.dC0dt + q.d2C1dP1dP0 * q.dC1dt);
+	Matrix3 dD2dP0Pseudo = -d * (q.d2C0dP2dP0 * q.dC0dt + q.d2C1dP2dP0 * q.dC1dt);
+
+	Matrix3 dD0dP1Pseudo = -d * (q.d2C0dP0dP1 * q.dC0dt + q.d2C1dP0dP1 * q.dC1dt);
+	Matrix3 dD1dP1Pseudo = -d * (q.d2C0dP1dP1 * q.dC0dt + q.d2C1dP1dP1 * q.dC1dt);
+	Matrix3 dD2dP1Pseudo = -d * (q.d2C0dP2dP1 * q.dC0dt + q.d2C1dP2dP1 * q.dC1dt);
+
+	Matrix3 dD0dP2Pseudo = -d * (q.d2C0dP0dP2 * q.dC0dt + q.d2C1dP0dP2 * q.dC1dt);
+	Matrix3 dD1dP2Pseudo = -d * (q.d2C0dP1dP2 * q.dC0dt + q.d2C1dP1dP2 * q.dC1dt);
+	Matrix3 dD2dP2Pseudo = -d * (q.d2C0dP2dP2 * q.dC0dt + q.d2C1dP2dP2 * q.dC1dt);
+
+	for (int i = 0; i < 3; ++i)
+	{
+		for (int j = 0; j < 3; ++j)
+		{
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[0] + i, 3 * m_inds[0] + j) += dD0dP0Pseudo(i, j);
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[0] + i, 3 * m_inds[1] + j) += dD1dP0Pseudo(i, j);
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[0] + i, 3 * m_inds[2] + j) += dD2dP0Pseudo(i, j);
+
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[1] + i, 3 * m_inds[0] + j) += dD0dP1Pseudo(i, j);
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[1] + i, 3 * m_inds[1] + j) += dD1dP1Pseudo(i, j);
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[1] + i, 3 * m_inds[2] + j) += dD2dP1Pseudo(i, j);
+
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[2] + i, 3 * m_inds[0] + j) += dD0dP2Pseudo(i, j);
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[2] + i, 3 * m_inds[1] + j) += dD1dP2Pseudo(i, j);
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[2] + i, 3 * m_inds[2] + j) += dD2dP2Pseudo(i, j);
+		}
+	}
+
 
 }
 

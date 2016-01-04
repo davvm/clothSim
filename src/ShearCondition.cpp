@@ -8,8 +8,6 @@ ShearCondition<Real>::ShearCondition(int i0, int i1, int i2)
 	m_inds[2] = i2;
 }
 
-
-
 template<class Real>
 ShearCondition<Real>::TriangleQuantities::TriangleQuantities() : TangentTriangleQuantities()
 {
@@ -175,6 +173,35 @@ void ShearCondition<Real>::computeForces(const Vector& x, const Vector& uv, Real
 	// details.
 
 	// Therefore, lets compute -kd * d2c/dpidpj dc/dt:
+	Matrix3 dD0dP0Pseudo = -d * (q.d2CdP0dP0 * q.dCdt);
+	Matrix3 dD1dP0Pseudo = -d * (q.d2CdP1dP0 * q.dCdt);
+	Matrix3 dD2dP0Pseudo = -d * (q.d2CdP2dP0 * q.dCdt);
+
+	Matrix3 dD0dP1Pseudo = -d * (q.d2CdP0dP1 * q.dCdt);
+	Matrix3 dD1dP1Pseudo = -d * (q.d2CdP1dP1 * q.dCdt);
+	Matrix3 dD2dP1Pseudo = -d * (q.d2CdP2dP1 * q.dCdt);
+
+	Matrix3 dD0dP2Pseudo = -d * (q.d2CdP0dP2 * q.dCdt);
+	Matrix3 dD1dP2Pseudo = -d * (q.d2CdP1dP2 * q.dCdt);
+	Matrix3 dD2dP2Pseudo = -d * (q.d2CdP2dP2 * q.dCdt);
+
+	for (int i = 0; i < 3; ++i)
+	{
+		for (int j = 0; j < 3; ++j)
+		{
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[0] + i, 3 * m_inds[0] + j) += dD0dP0Pseudo(i, j);
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[0] + i, 3 * m_inds[1] + j) += dD1dP0Pseudo(i, j);
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[0] + i, 3 * m_inds[2] + j) += dD2dP0Pseudo(i, j);
+
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[1] + i, 3 * m_inds[0] + j) += dD0dP1Pseudo(i, j);
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[1] + i, 3 * m_inds[1] + j) += dD1dP1Pseudo(i, j);
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[1] + i, 3 * m_inds[2] + j) += dD2dP1Pseudo(i, j);
+
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[2] + i, 3 * m_inds[0] + j) += dD0dP2Pseudo(i, j);
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[2] + i, 3 * m_inds[1] + j) += dD1dP2Pseudo(i, j);
+			dampingPseudoXDerivatives.coeffRef(3 * m_inds[2] + i, 3 * m_inds[2] + j) += dD2dP2Pseudo(i, j);
+		}
+	}
 
 }
 

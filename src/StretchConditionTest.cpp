@@ -394,30 +394,13 @@ namespace UnitTest1
 			// compare to numerically computed forces:
 			double dx = 0.0001;
 			double tol = 1.e-4;
-			Assert::AreEqual(numericalForce(sc, uv, x, k, 0, dx), f[0], tol);
-			Assert::AreEqual(numericalForce(sc, uv, x, k, 1, dx), f[1], tol);
-			Assert::AreEqual(numericalForce(sc, uv, x, k, 2, dx), f[2], tol);
+			for (int i = 0; i < x.size(); ++i)
+			{
+				Assert::AreEqual(numericalForce(sc, uv, x, k, i, dx), f[i], tol);
+				Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, i, dx), dampingForces[i], tol);
+			}
 
-			Assert::AreEqual(numericalForce(sc, uv, x, k, 3 + 0, dx), f[3 + 0], tol);
-			Assert::AreEqual(numericalForce(sc, uv, x, k, 3 + 1, dx), f[3 + 1], tol);
-			Assert::AreEqual(numericalForce(sc, uv, x, k, 3 + 2, dx), f[3 + 2], tol);
-
-			Assert::AreEqual(numericalForce(sc, uv, x, k, 6 + 0, dx), f[6 + 0], tol);
-			Assert::AreEqual(numericalForce(sc, uv, x, k, 6 + 1, dx), f[6 + 1], tol);
-			Assert::AreEqual(numericalForce(sc, uv, x, k, 6 + 2, dx), f[6 + 2], tol);
-
-			Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 0, dx), dampingForces[0], tol);
-			Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 1, dx), dampingForces[1], tol);
-			Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 2, dx), dampingForces[2], tol);
-
-			Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 3 + 0, dx), dampingForces[3 + 0], tol);
-			Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 3 + 1, dx), dampingForces[3 + 1], tol);
-			Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 3 + 2, dx), dampingForces[3 + 2], tol);
-
-			Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 6 + 0, dx), dampingForces[6 + 0], tol);
-			Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 6 + 1, dx), dampingForces[6 + 1], tol);
-			Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 6 + 2, dx), dampingForces[6 + 2], tol);
-
+			// check force derivatives numerically:
 			for (int i = 0; i < x.size(); ++i)
 			{
 				Eigen::VectorXd fdN = dfdx.row(i);
@@ -425,6 +408,9 @@ namespace UnitTest1
 				fdN = dfdv.row(i);
 				checkVectorEquality(fdN, numericalDampingForceDerivative(sc, uv, x, v, k, d, i, dx), tol, true);
 			}
+
+			// check the terms that are almost dfd/dx but not quite:
+			checkPseudoDerivatives(dampingPseudoDerivatives, sc, uv, x, v, k, d, dx, tol);
 
 			// test on 10 randomized configurations:
 			for (size_t n = 0; n < 10; ++n)
@@ -456,29 +442,11 @@ namespace UnitTest1
 				}
 				sc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives, dfdv);
 
-				Assert::AreEqual(numericalForce(sc, uv, x, k, 0, dx), f[0], tol);
-				Assert::AreEqual(numericalForce(sc, uv, x, k, 1, dx), f[1], tol);
-				Assert::AreEqual(numericalForce(sc, uv, x, k, 2, dx), f[2], tol);
-
-				Assert::AreEqual(numericalForce(sc, uv, x, k, 3 + 0, dx), f[3 + 0], tol);
-				Assert::AreEqual(numericalForce(sc, uv, x, k, 3 + 1, dx), f[3 + 1], tol);
-				Assert::AreEqual(numericalForce(sc, uv, x, k, 3 + 2, dx), f[3 + 2], tol);
-
-				Assert::AreEqual(numericalForce(sc, uv, x, k, 6 + 0, dx), f[6 + 0], tol);
-				Assert::AreEqual(numericalForce(sc, uv, x, k, 6 + 1, dx), f[6 + 1], tol);
-				Assert::AreEqual(numericalForce(sc, uv, x, k, 6 + 2, dx), f[6 + 2], tol);
-
-				Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 0, dx), dampingForces[0], tol);
-				Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 1, dx), dampingForces[1], tol);
-				Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 2, dx), dampingForces[2], tol);
-
-				Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 3 + 0, dx), dampingForces[3 + 0], tol);
-				Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 3 + 1, dx), dampingForces[3 + 1], tol);
-				Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 3 + 2, dx), dampingForces[3 + 2], tol);
-
-				Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 6 + 0, dx), dampingForces[6 + 0], tol);
-				Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 6 + 1, dx), dampingForces[6 + 1], tol);
-				Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, 6 + 2, dx), dampingForces[6 + 2], tol);
+				for (int i = 0; i < x.size(); ++i)
+				{
+					Assert::AreEqual(numericalForce(sc, uv, x, k, i, dx), f[i], tol);
+					Assert::AreEqual(numericalDampingForce(sc, uv, x, v, d, i, dx), dampingForces[i], tol);
+				}
 
 				for (int i = 0; i < x.size(); ++i)
 				{
@@ -487,6 +455,9 @@ namespace UnitTest1
 					fdN = dfdv.row(i);
 					checkVectorEquality(fdN, numericalDampingForceDerivative(sc, uv, x, v, k, d, i, dx), tol, true);
 				}
+
+				// check the terms that are almost dfd/dx but not quite:
+				checkPseudoDerivatives(dampingPseudoDerivatives, sc, uv, x, v, k, d, dx, tol);
 			}
 
 		}

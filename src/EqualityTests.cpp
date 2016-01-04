@@ -61,25 +61,48 @@ double numericalForce(const EnergyCondition<double> &c, const Eigen::VectorXd &u
 	return -k * (ePlus - eMinus) / (2 * dx);
 }
 
-double numericalDampingForce(const EnergyCondition<double> &c, const Eigen::VectorXd &uv, const Eigen::VectorXd &x, const Eigen::VectorXd &v, double d, int i, double dx)
+static Eigen::VectorXd numericalCTimeDerivative(const EnergyCondition<double> &c, const Eigen::VectorXd &x, const Eigen::VectorXd &v, const Eigen::VectorXd &uv, double dx)
 {
-	// find dC/dt
-	Eigen::VectorXd xtest;;
+	Eigen::VectorXd xtest;
 	xtest = x + dx * v;
 	Eigen::VectorXd cPlus = c.C(xtest, uv);
 	xtest = x - dx * v;
 	Eigen::VectorXd cMinus = c.C(xtest, uv);
 
-	Eigen::VectorXd dCdt = (cPlus - cMinus) / (2 * dx);
+	return (cPlus - cMinus) / (2 * dx);
+}
+
+static Eigen::VectorXd numericalFirstCDerivative(const EnergyCondition<double> &c, const Eigen::VectorXd &x, const Eigen::VectorXd &uv, int i, double dx)
+{
+	Eigen::VectorXd xtest = x;
+
+	xtest[i] = x[i] + dx;
+	Eigen::VectorXd cPlus = c.C(xtest, uv);
+	xtest[i] = x[i] - dx;
+	Eigen::VectorXd cMinus = c.C(xtest, uv);
+
+	return (cPlus - cMinus) / (2 * dx);
+}
+
+static Eigen::VectorXd numericalSecondCDerivative(const EnergyCondition<double> &c, const Eigen::VectorXd &x, const Eigen::VectorXd &uv, int i, int j, double dx)
+{
+	Eigen::VectorXd xtest = x;
+
+	xtest[j] = x[j] + dx;
+	Eigen::VectorXd dCdxPlus = numericalFirstCDerivative(c, xtest, uv, i, dx);
+	xtest[j] = x[j] - dx;
+	Eigen::VectorXd dCdxcMinus = numericalFirstCDerivative(c, xtest, uv, i, dx);
+
+	return (dCdxPlus - dCdxcMinus) / (2 * dx);
+}
+
+double numericalDampingForce(const EnergyCondition<double> &c, const Eigen::VectorXd &uv, const Eigen::VectorXd &x, const Eigen::VectorXd &v, double d, int i, double dx)
+{
+	// find dC/dt
+	Eigen::VectorXd dCdt = numericalCTimeDerivative(c, x, v, uv, dx);
 
 	// find dC/dx
-	xtest = x;
-	xtest[i] = x[i] + dx;
-	cPlus = c.C(xtest, uv);
-	xtest[i] = x[i] - dx;
-	cMinus = c.C(xtest, uv);
-
-	Eigen::VectorXd dCdx = (cPlus - cMinus) / (2 * dx);
+	Eigen::VectorXd dCdx = numericalFirstCDerivative(c, x, uv, i, dx);
 	
 	// fd = -d * sum( i, dC_i/dx * dC_i/dt )
 	return -d * (dCdx.array() * dCdt.array()).sum();
@@ -137,4 +160,20 @@ Eigen::VectorXd numericalDampingForceDerivative(const EnergyCondition<double> &c
 
 	// df/dx
 	return (dampingForcePlus - dampingForceMinus) / (2 * dx);
+}
+
+void checkPseudoDerivatives(const Eigen::SparseMatrix<double> &dampingPseudoDerivatives, const EnergyCondition<double> &c, const Eigen::VectorXd &uv, Eigen::VectorXd &x, Eigen::VectorXd &v, double k, double d, double dx, double tol)
+{
+	Eigen::VectorXd dCdt = numericalCTimeDerivative(c, x, v, uv, dx);
+
+	for (int i = 0; i < x.size(); ++i)
+	{
+		for (int j = 0; j < x.size(); ++j)
+		{
+			Eigen::VectorXd d2Cdidj = numericalSecondCDerivative(c, x, uv, i, j, dx);
+			double expectedCoeff = -d * (d2Cdidj.array() * dCdt.array()).sum();
+			double actualCoeff = dampingPseudoDerivatives.coeff(i, j);
+			Microsoft::VisualStudio::CppUnitTestFramework::Assert::AreEqual(actualCoeff, expectedCoeff, tol);
+		}
+	}
 }
