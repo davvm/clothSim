@@ -38,6 +38,9 @@ public:
 	// accessor for masses:
 	const Vector &m() const;
 
+	// accessor for indices:
+	const std::vector<int> &triangleIndices();
+
 	// accessors for the energy terms:
 	const std::vector< BendCondition<Real> > &bendConditions() const;
 	const std::vector< ShearCondition<Real> > &shearConditions() const;
@@ -58,7 +61,9 @@ private:
 	Vector m_m;
 
 	// reference pose:
-	const Vector m_uv;
+	Vector m_uv;
+
+	const std::vector<int> m_triangleIndices;
 
 	// material properties:
 	Real m_kBend;

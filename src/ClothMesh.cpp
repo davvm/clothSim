@@ -27,9 +27,10 @@ ClothMesh<Real>::ClothMesh(
 	) :
 	m_kBend(kBend), m_kStretch(kStretch), m_kShear(kShear),
 	m_dBend(dBend), m_dStretch(dStretch), m_dShear(dShear),
-	m_x(x),
-	m_v(v),
-	m_uv(uv),
+	m_x((int)x.size()),
+	m_v((int)v.size()),
+	m_uv((int)uv.size()),
+	m_triangleIndices( triangleIndices ),
 	m_m((int)uv.size() / 2),
 	m_dfdx((int)x.size(), (int)x.size()),
 	m_dfdv((int)x.size(), (int)x.size()),
@@ -37,6 +38,19 @@ ClothMesh<Real>::ClothMesh(
 	m_implicitUpdateRHS((int)x.size()),
 	m_forces((int)x.size())
 {
+	for (int i = 0; i < x.size(); ++i)
+	{
+		m_x[i] = x[i];
+	}
+	for (int i = 0; i < v.size(); ++i)
+	{
+		m_v[i] = v[i];
+	}
+	for (int i = 0; i < uv.size(); ++i)
+	{
+		m_uv[i] = uv[i];
+	}
+
 	m_m.setConstant(0);
 	for(size_t i = 0; i < triangleIndices.size(); i += 3 )
 	{
@@ -141,6 +155,12 @@ const std::vector< StretchCondition<Real> > &ClothMesh<Real>::stretchConditions(
 	return m_stretchConditions;
 }
 
+template<class Real>
+const std::vector<int> &ClothMesh<Real>::triangleIndices()
+{
+	return m_triangleIndices;
+}
+
 // advance the simulation:
 template<class Real>
 void ClothMesh<Real>::advance(Real dt, const LinearSolver<Real> &solver)
@@ -206,6 +226,8 @@ void ClothMesh<Real>::advance(Real dt, const LinearSolver<Real> &solver)
 
 	// build the right hand side:
 	m_implicitUpdateRHS += dt * (m_forces + dt * m_dfdx * m_v);
+
+	m_implicitUpdateMatrix.makeCompressed();
 
 	// solve the linear system:
 	solver.solve(m_implicitUpdateMatrix, m_implicitUpdateRHS, m_dv);
