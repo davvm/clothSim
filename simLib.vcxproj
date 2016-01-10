@@ -15,6 +15,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\BasicCGSolver.cpp" />
     <ClCompile Include="src\BendCondition.cpp" />
     <ClCompile Include="src\ClothMesh.cpp" />
     <ClCompile Include="src\DirectSolver.cpp" />
@@ -22,6 +23,7 @@
     <ClCompile Include="src\StretchCondition.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\BasicCGSolver.h" />
     <ClInclude Include="include\BendCondition.h" />
     <ClInclude Include="include\ClothMesh.h" />
     <ClInclude Include="include\EnergyCondition.h" />
