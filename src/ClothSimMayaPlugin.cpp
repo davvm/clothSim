@@ -1,5 +1,6 @@
 #include "ClothSimMayaPlugin.h"
 
+#include "BasicCGSolver.h"
 #include "DirectSolver.h"
 
 #include <maya/MFnVectorArrayData.h>
@@ -130,24 +131,30 @@ MObject ClothSimMayaPlugin::createMesh(const MTime& time,
 
 	if (!m_simMesh.get())
 	{
-		int nx = 3;
-		int ny = 3;
+		int nx = 20;
+		int ny = 20;
 
 		Eigen::VectorXf v((nx+1) * (ny+1) * 3);
 		Eigen::VectorXf x((nx + 1) * (ny + 1) * 3);
 		Eigen::VectorXf uv((nx + 1) * (ny + 1) * 2);
 
+		Eigen::Vector2f xzCoords(0, 0);
 		for (int i = 0; i <= nx; ++i)
 		{
-			for (int j = 0; j <= nx; ++j)
+			for (int j = 0; j <= ny; ++j)
 			{
 				int base = i + (nx+1) * j;
-				x[3 * base + 0] = uv[2 * base + 0] = (float)i / nx;
-				x[3 * base + 1] = uv[2 * base + 1] = (float)j / ny;
-				x[3 * base + 2] = 0.1f * i * j / (nx * ny);
+				uv[2 * base + 0] = (float)i / nx;
+				uv[2 * base + 1] = (float)j / ny;
+
+				x[3 * base + 0] = xzCoords[0];
+				x[3 * base + 1] = (float)j / ny;
+				x[3 * base + 2] = xzCoords[1];
 
 				v[3 * base + 0] = v[3 * base + 1] = v[3 * base + 2] = 0;
 			}
+			float theta(i * 3.5f / nx);
+			xzCoords += Eigen::Vector2f(cos(theta) / nx, sin(theta) / nx);
 		}
 
 		std::vector<int> triangleInds;
@@ -159,26 +166,26 @@ MObject ClothSimMayaPlugin::createMesh(const MTime& time,
 
 				triangleInds.push_back(base + 0);
 				triangleInds.push_back(base + 1);
-				triangleInds.push_back(base + 4);
+				triangleInds.push_back(base + (nx + 1));
 
 				triangleInds.push_back(base + 1);
-				triangleInds.push_back(base + 5);
-				triangleInds.push_back(base + 4);
+				triangleInds.push_back(base + (nx + 2));
+				triangleInds.push_back(base + (nx + 1));
 
 			}
 		}
-		std::cerr << "init sim" << std::endl;
+
 		m_simMesh.reset( new ClothMesh<float>(
 			x, v, uv, triangleInds,
-			1.0, 100.0, 100.0,
-			1.0, 10.0, 10.0,
-			1.0
+			0.01f, 10000.0f, 10000.0f,
+			0.001f, 100.0f, 100.0f,
+			1.0f
 			));
-		std::cerr << "init sim done" << std::endl;
 	}
 
 	if (t >= m_prevTime)
 	{
+		//BasicCGSolver<float> solver;
 		DirectSolver<float> solver;
 		try
 		{
