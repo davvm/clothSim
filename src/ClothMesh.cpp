@@ -31,12 +31,7 @@ ClothMesh<Real>::ClothMesh(
 	m_v((int)v.size()),
 	m_uv((int)uv.size()),
 	m_triangleIndices( triangleIndices ),
-	m_m((int)uv.size() / 2),
-	m_dfdx((int)x.size(), (int)x.size()),
-	m_dfdv((int)x.size(), (int)x.size()),
-	m_implicitUpdateMatrix((int)x.size(), (int)x.size()),
-	m_implicitUpdateRHS((int)x.size()),
-	m_forces((int)x.size())
+	m_m((int)uv.size() / 2)
 {
 	for (int i = 0; i < x.size(); ++i)
 	{
@@ -165,76 +160,142 @@ const std::vector<int> &ClothMesh<Real>::triangleIndices()
 template<class Real>
 void ClothMesh<Real>::advance(Real dt, const LinearSolver<Real> &solver)
 {
-	// reset existing sim data to zero:
-	m_implicitUpdateRHS.setConstant(0);
-	m_forces.setConstant(0);
-	m_dv.setConstant(0);
-	for (int i = 0; i < m_dfdx.outerSize(); ++i)
-	{
-		for (SparseMatrix::InnerIterator it(m_dfdx, i); it; ++it)
-		{
-			it.valueRef() = 0;
-		}
-	}
-	for (int i = 0; i < m_dfdv.outerSize(); ++i)
-	{
-		for (SparseMatrix::InnerIterator it(m_dfdv, i); it; ++it)
-		{
-			it.valueRef() = 0;
-		}
-	}
-	for (int i = 0; i < m_implicitUpdateMatrix.outerSize(); ++i)
-	{
-		for (SparseMatrix::InnerIterator it(m_implicitUpdateMatrix, i); it; ++it)
-		{
-			it.valueRef() = 0;
-		}
-	}
+	Vector forces((int)m_x.size());
+	SparseMatrix dfdx((int)m_x.size(), (int)m_x.size());
+	SparseMatrix dfdv((int)m_x.size(), (int)m_x.size());
+	forcesAndDerivatives(m_x, m_uv, m_v, forces, forces, dfdx, dfdx, dfdv);
 
-	// build dfdx, dfdv and the forces:
+	Vector implicitUpdateRHS((int)m_x.size());
+	SparseMatrix implicitUpdateMatrix((int)m_x.size(), (int)m_x.size());
+	assembleImplicitUpdateEquations(dt, forces, m_v, dfdx, dfdv, implicitUpdateMatrix, implicitUpdateRHS);
+
+	// solve the linear system:
+	Vector dv((int)m_x.size());
+	solver.solve(implicitUpdateMatrix, implicitUpdateRHS, dv);
+
+	// update:
+	m_v += dv;
+	m_x += dt * m_v;
+}
+
+template<class Real>
+void ClothMesh<Real>::forcesAndDerivatives(const Vector &x, const Vector &uv, const Vector &v, Vector &f, Vector &d, SparseMatrix &dfdx, SparseMatrix &dddx, SparseMatrix &dddv) const
+{
+	d.setConstant(0);
+	f.setConstant(0);
+	for (int i = 0; i < dfdx.outerSize(); ++i)
+	{
+		for (SparseMatrix::InnerIterator it(dfdx, i); it; ++it)
+		{
+			it.valueRef() = 0;
+		}
+	}
+	for (int i = 0; i < dddx.outerSize(); ++i)
+	{
+		for (SparseMatrix::InnerIterator it(dddx, i); it; ++it)
+		{
+			it.valueRef() = 0;
+		}
+	}
+	for (int i = 0; i < dddv.outerSize(); ++i)
+	{
+		for (SparseMatrix::InnerIterator it(dddv, i); it; ++it)
+		{
+			it.valueRef() = 0;
+		}
+	}
 
 	// add the bend terms:
 	for (size_t i = 0; i < m_bendConditions.size(); ++i)
 	{
-		m_bendConditions[i].computeForces(m_x, m_uv, m_kShear, m_forces, m_dfdx, m_v, m_dShear, m_forces, m_dfdx, m_dfdv);
+		m_bendConditions[i].computeForces(x, uv, m_kBend, f, dfdx, v, m_dBend, d, dddx, dddv);
 	}
 
 	// add the stretch terms:
 	for (size_t i = 0; i < m_stretchConditions.size(); ++i)
 	{
-		m_stretchConditions[i].computeForces(m_x, m_uv, m_kShear, m_forces, m_dfdx, m_v, m_dShear, m_forces, m_dfdx, m_dfdv);
+		m_stretchConditions[i].computeForces(x, uv, m_kStretch, f, dfdx, v, m_dStretch, d, dddx, dddv);
 	}
 
 	// add the shear terms:
 	for (size_t i = 0; i < m_shearConditions.size(); ++i)
 	{
-		m_shearConditions[i].computeForces(m_x, m_uv, m_kShear, m_forces, m_dfdx, m_v, m_dShear, m_forces, m_dfdx, m_dfdv);
+		m_shearConditions[i].computeForces(x, uv, m_kShear, f, dfdx, v, m_dShear, d, dddx, dddv);
+	}
+}
+
+
+template<class Real>
+void ClothMesh<Real>::assembleImplicitUpdateEquations(Real dt, const Vector &f, const Vector &v, const SparseMatrix &dfdx, const SparseMatrix &dfdv, SparseMatrix &implicitUpdateMatrix, Vector &implicitUpdateRHS) const
+{
+
+	// reset existing sim data to zero:
+	for (int i = 0; i < implicitUpdateMatrix.outerSize(); ++i)
+	{
+		for (SparseMatrix::InnerIterator it(implicitUpdateMatrix, i); it; ++it)
+		{
+			it.valueRef() = 0;
+		}
 	}
 
-	// The implicit update system we want to solve is this:
-	// ( M - dt * dfdv - dt * dt * dfdx ) * dv = dt * ( f + dt * dfdx * v )
+	// right hand side:
+	implicitUpdateRHS = f * dt + dfdx * v * dt * dt;
 
-	// build the implicit update matrix:
-	m_implicitUpdateMatrix += - dt * m_dfdv - dt * dt * m_dfdv;
-	
+	// matrix:
+	implicitUpdateMatrix = -dfdx * dt * dt - dfdv * dt;
+
 	// add masses onto the diagonal:
-	for (int i = 0; i < m_x.size(); ++i)
+	for (int i = 0; i < f.size(); ++i)
 	{
 		// unit masses for now...
-		m_implicitUpdateMatrix.coeffRef(i, i) += m_m[i/3];
+		implicitUpdateMatrix.coeffRef(i, i) += m_m[i / 3];
 	}
+	implicitUpdateMatrix.makeCompressed();
+}
 
-	// build the right hand side:
-	m_implicitUpdateRHS += dt * (m_forces + dt * m_dfdx * m_v);
+template<class Real>
+Real ClothMesh<Real>::energy(const Vector& x, const Vector& uv) const
+{
+	Real e = 0;
+	for (size_t i = 0; i < m_bendConditions.size(); ++i)
+	{
+		Vector c = m_bendConditions[i].C(x, uv);
+		e += m_kBend * Real(0.5) * c.dot(c);
+	}
+	for (size_t i = 0; i < m_shearConditions.size(); ++i)
+	{
+		Vector c = m_shearConditions[i].C(x, uv);
+		e += m_kShear * Real(0.5) * c.dot(c);
+	}
+	for (size_t i = 0; i < m_stretchConditions.size(); ++i)
+	{
+		Vector c = m_stretchConditions[i].C(x, uv);
+		e += m_kStretch * Real(0.5) * c.dot(c);
+	}
+	return e;
+}
 
-	m_implicitUpdateMatrix.makeCompressed();
+template<class Real>
+void ClothMesh<Real>::C(const Vector& x, const Vector& uv, Vector& c) const
+{
+	c.resize(m_bendConditions.size() + m_shearConditions.size() + 2 * m_stretchConditions.size());
+	c.setConstant(0);
 
-	// solve the linear system:
-	solver.solve(m_implicitUpdateMatrix, m_implicitUpdateRHS, m_dv);
-
-	// update:
-	m_v += m_dv;
-	m_x += dt * m_v;
+	size_t n = 0;
+	for (size_t i = 0; i < m_bendConditions.size(); ++i)
+	{
+		c[n++] = m_bendConditions[i].C(x, uv)[0];
+	}
+	for (size_t i = 0; i < m_shearConditions.size(); ++i)
+	{
+		c[n++] = m_shearConditions[i].C(x, uv)[0];
+	}
+	for (size_t i = 0; i < m_stretchConditions.size(); ++i)
+	{
+		Vector cc = m_stretchConditions[i].C(x, uv);
+		c[n++] = cc[0];
+		c[n++] = cc[1];
+	}
 }
 
 template class ClothMesh<float>;

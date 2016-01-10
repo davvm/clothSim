@@ -49,6 +49,18 @@ public:
 	// advance the simulation:
 	void advance(Real dt, const LinearSolver<Real> &solver);
 
+	// calculate forces and derivatives:
+	void forcesAndDerivatives(const Vector &x, const Vector &uv, const Vector &v, Vector &f, Vector &d, SparseMatrix &dfdx, SparseMatrix &dddx, SparseMatrix &dddv) const;
+
+	// get the implicit update linear system ready:
+	void assembleImplicitUpdateEquations(Real dt, const Vector &f, const Vector &v, const SparseMatrix &dfdx, const SparseMatrix &dfdv, SparseMatrix &implicitUpdateMatrix, Vector &implicitUpdateRHS) const;
+
+	// energy function for testing:
+	Real energy(const Vector& x, const Vector& uv) const;
+
+	// vector containing all the constraint functions for testing:
+	void C(const Vector& x, const Vector& uv, Vector& c) const;
+
 private:
 
 	// positions:
@@ -78,14 +90,6 @@ private:
 	std::vector< BendCondition<Real> > m_bendConditions;
 	std::vector< ShearCondition<Real> > m_shearConditions;
 	std::vector< StretchCondition<Real> > m_stretchConditions;
-
-	// solver data:
-	SparseMatrix m_dfdx;
-	SparseMatrix m_dfdv;
-	SparseMatrix m_implicitUpdateMatrix;
-	Vector m_implicitUpdateRHS;
-	Vector m_forces;
-	Vector m_dv;
 
 };
 
