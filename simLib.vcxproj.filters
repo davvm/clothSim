@@ -19,6 +19,9 @@
     <ClCompile Include="src\BasicCGSolver.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\ConstrainedCGSolver.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\BendCondition.h">
@@ -46,6 +49,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\BasicCGSolver.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ConstrainedCGSolver.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

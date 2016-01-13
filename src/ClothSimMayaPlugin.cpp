@@ -2,6 +2,7 @@
 
 #include "BasicCGSolver.h"
 #include "DirectSolver.h"
+#include "ConstrainedCGSolver.h"
 
 #include <maya/MFnVectorArrayData.h>
 #include <maya/MFnDoubleArrayData.h>
@@ -129,10 +130,11 @@ MObject ClothSimMayaPlugin::createMesh(const MTime& time,
 		m_simMesh.reset(0);
 	}
 
+	int nx = 20;
+	int ny = 20;
+
 	if (!m_simMesh.get())
 	{
-		int nx = 20;
-		int ny = 20;
 
 		Eigen::VectorXf v((nx+1) * (ny+1) * 3);
 		Eigen::VectorXf x((nx + 1) * (ny + 1) * 3);
@@ -175,18 +177,35 @@ MObject ClothSimMayaPlugin::createMesh(const MTime& time,
 			}
 		}
 
-		m_simMesh.reset( new ClothMesh<float>(
-			x, v, uv, triangleInds,
-			0.01f, 10000.0f, 10000.0f,
-			0.001f, 100.0f, 100.0f,
-			1.0f
-			));
+		m_simMesh.reset(
+			new ClothMesh<float>(
+				x, v, uv, triangleInds,
+				0.01f, 10000.0f, 10000.0f,
+				0.001f, 100.0f, 100.0f,
+				1.0f
+			)
+		);
 	}
 
 	if (t >= m_prevTime)
 	{
-		//BasicCGSolver<float> solver;
-		DirectSolver<float> solver;
+		std::vector<int> constraintIndices;
+		std::vector< Eigen::Matrix3f > constraintMatrices;
+
+		constraintIndices.push_back(0);
+		constraintMatrices.push_back( Eigen::Matrix3f::Zero() );
+
+		Eigen::VectorXf constraintVelocityDeltas(m_simMesh->x().size());
+		constraintVelocityDeltas.setConstant(0);
+
+		ConstrainedCGSolver<float> solver(
+			constraintIndices,
+			constraintMatrices,
+			constraintVelocityDeltas,
+			0.01f,
+			100
+		);
+
 		try
 		{
 			m_simMesh->advance(float(t - m_prevTime), solver);
