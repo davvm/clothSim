@@ -15,10 +15,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\ClothSimMayaPlugin.cpp" />
+    <ClCompile Include="src\mayaPlugin\ClothSimMayaPlugin.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\ClothSimMayaPlugin.h" />
+    <ClInclude Include="include\mayaPlugin\ClothSimMayaPlugin.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <Keyword>Win32Proj</Keyword>

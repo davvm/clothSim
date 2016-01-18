@@ -6,7 +6,7 @@
 #include <maya/MPxNode.h> 
 #include <maya/MVectorArray.h> 
 
-#include "ClothMesh.h"
+#include "simLib\ClothMesh.h"
 
 class ClothSimMayaPlugin : public MPxNode
 {

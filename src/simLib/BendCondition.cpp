@@ -1,4 +1,4 @@
-#include "BendCondition.h"
+#include "simLib\BendCondition.h"
 #include <iostream>
 template<class Real>
 BendCondition<Real>::BendCondition(int i0, int i1, int i2, int i3)

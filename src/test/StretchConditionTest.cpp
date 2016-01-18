@@ -1,8 +1,8 @@
 #include "CppUnitTest.h"
 
-#include "EqualityTests.h"
+#include "test\EqualityTests.h"
 
-#include "StretchCondition.h"
+#include "simLib\StretchCondition.h"
 
 #include <iostream>
 

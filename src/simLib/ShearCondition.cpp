@@ -1,4 +1,4 @@
-#include "ShearCondition.h"
+#include "simLib\ShearCondition.h"
 
 template <class Real>
 ShearCondition<Real>::ShearCondition(int i0, int i1, int i2)

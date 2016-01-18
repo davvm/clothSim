@@ -1,4 +1,4 @@
-#include "ClothMesh.h"
+#include "simLib\ClothMesh.h"
 
 static std::vector<int> sharedVertices(const std::vector<int> &triangleIndices, size_t i, size_t j)
 {

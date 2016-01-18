@@ -1,4 +1,4 @@
-#include "EqualityTests.h"
+#include "test\EqualityTests.h"
 
 #include "CppUnitTest.h"
 

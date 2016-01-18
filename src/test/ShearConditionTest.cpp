@@ -1,8 +1,8 @@
 #include "CppUnitTest.h"
 
-#include "EqualityTests.h"
+#include "test\EqualityTests.h"
 
-#include "ShearCondition.h"
+#include "simLib\ShearCondition.h"
 
 #include <iostream>
 

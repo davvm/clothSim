@@ -1,8 +1,8 @@
 #include "CppUnitTest.h"
 
-#include "EqualityTests.h"
+#include "test\EqualityTests.h"
 
-#include "BendCondition.h"
+#include "simLib\BendCondition.h"
 
 #include <iostream>
 

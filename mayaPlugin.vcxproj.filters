@@ -9,12 +9,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\ClothSimMayaPlugin.cpp">
+    <ClCompile Include="src\mayaPlugin\ClothSimMayaPlugin.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\ClothSimMayaPlugin.h">
+    <ClInclude Include="include\mayaPlugin\ClothSimMayaPlugin.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

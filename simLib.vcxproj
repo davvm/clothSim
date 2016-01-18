@@ -15,28 +15,28 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\BasicCGSolver.cpp" />
-    <ClCompile Include="src\BendCondition.cpp" />
-    <ClCompile Include="src\ClothMesh.cpp" />
-    <ClCompile Include="src\ConstrainedCGSolver.cpp" />
-    <ClCompile Include="src\DirectSolver.cpp" />
-    <ClCompile Include="src\GravityField.cpp" />
-    <ClCompile Include="src\ShearCondition.cpp" />
-    <ClCompile Include="src\StretchCondition.cpp" />
+    <ClCompile Include="src\simLib\BasicCGSolver.cpp" />
+    <ClCompile Include="src\simLib\BendCondition.cpp" />
+    <ClCompile Include="src\simLib\ClothMesh.cpp" />
+    <ClCompile Include="src\simLib\ConstrainedCGSolver.cpp" />
+    <ClCompile Include="src\simLib\DirectSolver.cpp" />
+    <ClCompile Include="src\simLib\GravityField.cpp" />
+    <ClCompile Include="src\simLib\ShearCondition.cpp" />
+    <ClCompile Include="src\simLib\StretchCondition.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\BasicCGSolver.h" />
-    <ClInclude Include="include\BendCondition.h" />
-    <ClInclude Include="include\ClothMesh.h" />
-    <ClInclude Include="include\ConstrainedCGSolver.h" />
-    <ClInclude Include="include\EnergyCondition.h" />
-    <ClInclude Include="include\DirectSolver.h" />
-    <ClInclude Include="include\ForceField.h" />
-    <ClInclude Include="include\GravityField.h" />
-    <ClInclude Include="include\LinearSolver.h" />
-    <ClInclude Include="include\ShearCondition.h" />
-    <ClInclude Include="include\StretchCondition.h" />
-    <ClInclude Include="include\TangentTriangleQuantities.h" />
+    <ClInclude Include="include\simLib\BasicCGSolver.h" />
+    <ClInclude Include="include\simLib\BendCondition.h" />
+    <ClInclude Include="include\simLib\ClothMesh.h" />
+    <ClInclude Include="include\simLib\ConstrainedCGSolver.h" />
+    <ClInclude Include="include\simLib\EnergyCondition.h" />
+    <ClInclude Include="include\simLib\DirectSolver.h" />
+    <ClInclude Include="include\simLib\ForceField.h" />
+    <ClInclude Include="include\simLib\GravityField.h" />
+    <ClInclude Include="include\simLib\LinearSolver.h" />
+    <ClInclude Include="include\simLib\ShearCondition.h" />
+    <ClInclude Include="include\simLib\StretchCondition.h" />
+    <ClInclude Include="include\simLib\TangentTriangleQuantities.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <Keyword>Win32Proj</Keyword>

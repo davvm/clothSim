@@ -1,7 +1,7 @@
 #ifndef EQUALITYTESTS_H
 #define EQUALITYTESTS_H
 
-#include "EnergyCondition.h"
+#include "simLib\EnergyCondition.h"
 
 void checkVectorEquality(Eigen::Vector3d v0, Eigen::Vector3d v1, double tol);
 void checkVectorEquality(Eigen::VectorXd v0, Eigen::VectorXd v1, double tol, bool relative = false);

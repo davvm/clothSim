@@ -1,9 +1,9 @@
-#include "ClothSimMayaPlugin.h"
+#include "mayaPlugin\ClothSimMayaPlugin.h"
 
-#include "BasicCGSolver.h"
-#include "DirectSolver.h"
-#include "ConstrainedCGSolver.h"
-#include "GravityField.h"
+#include "simLib\BasicCGSolver.h"
+#include "simLib\DirectSolver.h"
+#include "simLib\ConstrainedCGSolver.h"
+#include "simLib\GravityField.h"
 
 #include <maya/MFnVectorArrayData.h>
 #include <maya/MFnDoubleArrayData.h>

@@ -1,9 +1,9 @@
 #include "CppUnitTest.h"
 
-#include "EqualityTests.h"
+#include "test\EqualityTests.h"
 
-#include "ClothMesh.h"
-#include "DirectSolver.h"
+#include "simLib\ClothMesh.h"
+#include "simLib\DirectSolver.h"
 
 #include <iostream>
 #include <set>
