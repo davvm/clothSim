@@ -583,7 +583,8 @@ namespace UnitTest1
 				Eigen::VectorXd xOrig = m.x();
 
 				DirectSolver<double> solver;
-				m.advance(dt, solver);
+				std::vector< ForceField<double>* > forceFields;
+				m.advance(forceFields, dt, solver);
 
 				checkVectorEquality(m.v() - vOrig, dv, 1.e-6, true);
 				checkVectorEquality(m.x() - xOrig, dx, 1.e-6, true);

@@ -3,6 +3,7 @@
 #include "BasicCGSolver.h"
 #include "DirectSolver.h"
 #include "ConstrainedCGSolver.h"
+#include "GravityField.h"
 
 #include <maya/MFnVectorArrayData.h>
 #include <maya/MFnDoubleArrayData.h>
@@ -125,13 +126,13 @@ MObject ClothSimMayaPlugin::createMesh(const MTime& time,
 
 {
 	double t = time.as(MTime::kSeconds);
-	if (t <= 2.0 / 24)
+	if (t <= 1.0 / 24 && m_prevTime > 1.0/24)
 	{
 		m_simMesh.reset(0);
 	}
 
-	int nx = 20;
-	int ny = 20;
+	int nx = 60;
+	int ny = 60;
 
 	if (!m_simMesh.get())
 	{
@@ -140,23 +141,20 @@ MObject ClothSimMayaPlugin::createMesh(const MTime& time,
 		Eigen::VectorXf x((nx + 1) * (ny + 1) * 3);
 		Eigen::VectorXf uv((nx + 1) * (ny + 1) * 2);
 
-		Eigen::Vector2f xzCoords(0, 0);
 		for (int i = 0; i <= nx; ++i)
 		{
 			for (int j = 0; j <= ny; ++j)
 			{
 				int base = i + (nx+1) * j;
-				uv[2 * base + 0] = (float)i / nx;
-				uv[2 * base + 1] = (float)j / ny;
+				uv[2 * base + 0] = (float)i / nx - 0.5f;
+				uv[2 * base + 1] = (float)j / ny - 0.5f;
 
-				x[3 * base + 0] = xzCoords[0];
-				x[3 * base + 1] = (float)j / ny;
-				x[3 * base + 2] = xzCoords[1];
+				x[3 * base + 0] = uv[2 * base + 0];
+				x[3 * base + 1] = 0;
+				x[3 * base + 2] = uv[2 * base + 1];
 
 				v[3 * base + 0] = v[3 * base + 1] = v[3 * base + 2] = 0;
 			}
-			float theta(i * 3.5f / nx);
-			xzCoords += Eigen::Vector2f(cos(theta) / nx, sin(theta) / nx);
 		}
 
 		std::vector<int> triangleInds;
@@ -180,35 +178,56 @@ MObject ClothSimMayaPlugin::createMesh(const MTime& time,
 		m_simMesh.reset(
 			new ClothMesh<float>(
 				x, v, uv, triangleInds,
-				0.01f, 10000.0f, 10000.0f,
-				0.001f, 100.0f, 100.0f,
+				0.01f, 1000000.0f, 1000000.0f,
+				0.01f, 1000.0f, 1000.0f,
 				1.0f
 			)
 		);
 	}
 
-	if (t >= m_prevTime)
+	std::vector<int> constraintIndices;
+	std::vector< Eigen::Matrix3f > constraintMatrices;
+
+	
+	Eigen::VectorXf constraintVelocityDeltas(m_simMesh->x().size());
+	constraintVelocityDeltas.setConstant(0);
+
+	for (int i = 0; i <= nx; ++i)
 	{
-		std::vector<int> constraintIndices;
-		std::vector< Eigen::Matrix3f > constraintMatrices;
+		for (int j = 0; j <= ny; ++j)
+		{
+			int idx = i + (nx + 1) * j;
+			float x = (float)i / nx - 0.5f;
+			float y = (float)j / ny - 0.5f;
 
-		constraintIndices.push_back(0);
-		constraintMatrices.push_back( Eigen::Matrix3f::Zero() );
+			if (x * x + y * y < 0.3 * 0.3)
+			{
+				constraintIndices.push_back(idx);
+				constraintMatrices.push_back(Eigen::Matrix3f::Zero());
+			}
+		}
+	}
 
-		Eigen::VectorXf constraintVelocityDeltas(m_simMesh->x().size());
-		constraintVelocityDeltas.setConstant(0);
-
+	if (t > m_prevTime)
+	{
 		ConstrainedCGSolver<float> solver(
 			constraintIndices,
 			constraintMatrices,
 			constraintVelocityDeltas,
 			0.01f,
-			100
+			400
 		);
+
+		GravityField<float> g( m_simMesh->m(), Eigen::Vector3f( 0,-9.8f, 0 ) );
+		std::vector< ForceField<float>* > forceFields;
+		forceFields.push_back( &g );
 
 		try
 		{
-			m_simMesh->advance(float(t - m_prevTime), solver);
+			std::cerr << "advance" << std::endl;
+			m_simMesh->advance(forceFields, float(t - m_prevTime)*0.5f, solver);
+			m_simMesh->advance(forceFields, float(t - m_prevTime)*0.5f, solver);
+			std::cerr << "done" << std::endl;
 		}
 		catch (const std::exception &e)
 		{

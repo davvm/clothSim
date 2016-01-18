@@ -1,11 +1,14 @@
 #ifndef CLOTHMESH_H
 #define CLOTHMESH_H
 
+
 #include "LinearSolver.h"
 
 #include "BendCondition.h"
 #include "ShearCondition.h"
 #include "StretchCondition.h"
+
+#include "ForceField.h"
 
 template <class Real>
 class ClothMesh
@@ -47,7 +50,7 @@ public:
 	const std::vector< StretchCondition<Real> > &stretchConditions() const;
 
 	// advance the simulation:
-	void advance(Real dt, const LinearSolver<Real> &solver);
+	void advance( std::vector< ForceField<Real>* > &forceFields, Real dt, const LinearSolver<Real> &solver);
 
 	// calculate forces and derivatives:
 	void forcesAndDerivatives(const Vector &x, const Vector &uv, const Vector &v, Vector &f, Vector &d, SparseMatrix &dfdx, SparseMatrix &dddx, SparseMatrix &dddv) const;
@@ -74,6 +77,10 @@ private:
 
 	// reference pose:
 	Vector m_uv;
+
+	SparseMatrix m_implicitUpdateMatrix;
+	SparseMatrix m_dfdx;
+	SparseMatrix m_dfdv;
 
 	const std::vector<int> m_triangleIndices;
 

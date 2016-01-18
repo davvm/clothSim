@@ -30,6 +30,9 @@ ClothMesh<Real>::ClothMesh(
 	m_x((int)x.size()),
 	m_v((int)v.size()),
 	m_uv((int)uv.size()),
+	m_implicitUpdateMatrix((int)x.size(), (int)x.size()),
+	m_dfdx((int)x.size(), (int)x.size()),
+	m_dfdv((int)x.size(), (int)x.size()),
 	m_triangleIndices( triangleIndices ),
 	m_m((int)uv.size() / 2)
 {
@@ -158,20 +161,21 @@ const std::vector<int> &ClothMesh<Real>::triangleIndices()
 
 // advance the simulation:
 template<class Real>
-void ClothMesh<Real>::advance(Real dt, const LinearSolver<Real> &solver)
+void ClothMesh<Real>::advance(std::vector< ForceField<Real>* > &forceFields, Real dt, const LinearSolver<Real> &solver)
 {
 	Vector forces((int)m_x.size());
-	SparseMatrix dfdx((int)m_x.size(), (int)m_x.size());
-	SparseMatrix dfdv((int)m_x.size(), (int)m_x.size());
-	forcesAndDerivatives(m_x, m_uv, m_v, forces, forces, dfdx, dfdx, dfdv);
+	forcesAndDerivatives(m_x, m_uv, m_v, forces, forces, m_dfdx, m_dfdx, m_dfdv);
+	for (size_t i = 0; i < forceFields.size(); ++i)
+	{
+		forceFields[i]->forcesAndDerivatives(forces, m_dfdx);
+	}
 
 	Vector implicitUpdateRHS((int)m_x.size());
-	SparseMatrix implicitUpdateMatrix((int)m_x.size(), (int)m_x.size());
-	assembleImplicitUpdateEquations(dt, forces, m_v, dfdx, dfdv, implicitUpdateMatrix, implicitUpdateRHS);
+	assembleImplicitUpdateEquations(dt, forces, m_v, m_dfdx, m_dfdv, m_implicitUpdateMatrix, implicitUpdateRHS);
 
 	// solve the linear system:
 	Vector dv((int)m_x.size());
-	solver.solve(implicitUpdateMatrix, implicitUpdateRHS, dv);
+	solver.solve(m_implicitUpdateMatrix, implicitUpdateRHS, dv);
 
 	// update:
 	m_v += dv;
