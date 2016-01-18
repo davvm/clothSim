@@ -28,6 +28,7 @@ public:
 private:
 	
 	void filter(Vector &x) const;
+	void precondition(Vector &x, Vector &p, bool inverse) const;
 
 	const std::vector<int> &m_constraintIndices;
 	const std::vector< Matrix3 > &m_constraintMatrices;

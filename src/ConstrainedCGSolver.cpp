@@ -20,18 +20,27 @@ template<class Real>
 void ConstrainedCGSolver<Real>::solve(const SparseMatrix &A, const Vector &b, Vector &deltaV) const
 {
 	//\todo: add preconditioner
+	Vector P(b.size());
+	for (int i = 0; i < b.size(); ++i)
+	{
+		P[i] = A.coeff(i,i);
+	}
+
 	deltaV = m_constraintVelocityDeltas;
 
 	Real delta0;
 	{
 		Vector filterB = b * Real(1.0);
 		filter(filterB);
-		delta0 = filterB.dot(filterB);
+		Vector filterBPrecond = filterB * Real(1.0);
+		precondition(filterBPrecond, P, false);
+		delta0 = filterB.dot(filterBPrecond);
 	}
 
 	Vector r = b - A * deltaV;
 	filter(r);
 	Vector c = r * Real(1.0);
+	precondition(c, P, true);
 	filter(c);
 
 	Real deltaNew = r.dot(c);
@@ -48,6 +57,8 @@ void ConstrainedCGSolver<Real>::solve(const SparseMatrix &A, const Vector &b, Ve
 		deltaV += alpha * c;
 		r -= alpha * q;
 		s = r * Real(1.0);
+		precondition(s, P, true);
+
 		deltaOld = deltaNew;
 		deltaNew = r.dot(s);
 
@@ -67,6 +78,20 @@ void ConstrainedCGSolver<Real>::filter(Vector &x) const
 		x.segment<3>(3 * idx) = (*matrixIt) * x.segment<3>(3 * idx);
 	}
 }
+
+template<class Real>
+void ConstrainedCGSolver<Real>::precondition(Vector &x, Vector &p, bool inverse) const
+{
+	if (inverse)
+	{
+		x.array() /= p.array();
+	}
+	else
+	{
+		x.array() *= p.array();
+	}
+}
+
 
 template class ConstrainedCGSolver<float>;
 template class ConstrainedCGSolver<double>;
