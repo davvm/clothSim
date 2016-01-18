@@ -187,7 +187,8 @@ typename EnergyCondition<Real>::Vector BendCondition<Real>::C(const Vector& x, c
 	);
 
 	Vector ret(1);
-	ret[0] = q.theta;
+	Real l = (uv.segment<2>(2 * m_inds[1]) - uv.segment<2>(2 * m_inds[2])).norm();
+	ret[0] = q.theta * sqrt(l);
 
 	return ret;
 }
@@ -212,6 +213,8 @@ void BendCondition<Real>::computeForces(
 		v.segment<3>(3 * m_inds[0]), v.segment<3>(3 * m_inds[1]), v.segment<3>(3 * m_inds[2]), v.segment<3>(3 * m_inds[3])
 	);
 
+	Real l = (uv.segment<2>(2 * m_inds[1]) - uv.segment<2>(2 * m_inds[2])).norm();
+
 	// Compute forces:
 
 	// E = 1/2 C^t C
@@ -219,34 +222,34 @@ void BendCondition<Real>::computeForces(
 	// f = -dE/dx
 	// f = - theta * dThetadX
 
-	forces.segment<3>(3 * m_inds[0]) -= k * q.theta * q.dThetadP0;
-	forces.segment<3>(3 * m_inds[1]) -= k * q.theta * q.dThetadP1;
-	forces.segment<3>(3 * m_inds[2]) -= k * q.theta * q.dThetadP2;
-	forces.segment<3>(3 * m_inds[3]) -= k * q.theta * q.dThetadP3;
+	forces.segment<3>(3 * m_inds[0]) -= k * l * q.theta * q.dThetadP0;
+	forces.segment<3>(3 * m_inds[1]) -= k * l * q.theta * q.dThetadP1;
+	forces.segment<3>(3 * m_inds[2]) -= k * l * q.theta * q.dThetadP2;
+	forces.segment<3>(3 * m_inds[3]) -= k * l * q.theta * q.dThetadP3;
 
 	// d/dP0( - q.theta * q.dThetadP0 )
 	// = - q.dThetadP0 * q.dThetadP0.transpose() - q.theta * q.d2ThetadP0dP0
 
 	// compute force derivatives and insert them into the sparse matrix:
-	Matrix3 df0dP0 = -k * (q.dThetadP0 * q.dThetadP0.transpose() + q.theta * q.d2ThetadP0dP0);
-	Matrix3 df0dP1 = -k * (q.dThetadP0 * q.dThetadP1.transpose() + q.theta * q.d2ThetadP0dP1);
-	Matrix3 df0dP2 = -k * (q.dThetadP0 * q.dThetadP2.transpose() + q.theta * q.d2ThetadP0dP2);
-	Matrix3 df0dP3 = -k * (q.dThetadP0 * q.dThetadP3.transpose() + q.theta * q.d2ThetadP0dP3);
+	Matrix3 df0dP0 = -k * l * (q.dThetadP0 * q.dThetadP0.transpose() + q.theta * q.d2ThetadP0dP0);
+	Matrix3 df0dP1 = -k * l * (q.dThetadP0 * q.dThetadP1.transpose() + q.theta * q.d2ThetadP0dP1);
+	Matrix3 df0dP2 = -k * l * (q.dThetadP0 * q.dThetadP2.transpose() + q.theta * q.d2ThetadP0dP2);
+	Matrix3 df0dP3 = -k * l * (q.dThetadP0 * q.dThetadP3.transpose() + q.theta * q.d2ThetadP0dP3);
 
-	Matrix3 df1dP0 = -k * (q.dThetadP1 * q.dThetadP0.transpose() + q.theta * q.d2ThetadP1dP0);
-	Matrix3 df1dP1 = -k * (q.dThetadP1 * q.dThetadP1.transpose() + q.theta * q.d2ThetadP1dP1);
-	Matrix3 df1dP2 = -k * (q.dThetadP1 * q.dThetadP2.transpose() + q.theta * q.d2ThetadP1dP2);
-	Matrix3 df1dP3 = -k * (q.dThetadP1 * q.dThetadP3.transpose() + q.theta * q.d2ThetadP1dP3);
+	Matrix3 df1dP0 = -k * l * (q.dThetadP1 * q.dThetadP0.transpose() + q.theta * q.d2ThetadP1dP0);
+	Matrix3 df1dP1 = -k * l * (q.dThetadP1 * q.dThetadP1.transpose() + q.theta * q.d2ThetadP1dP1);
+	Matrix3 df1dP2 = -k * l * (q.dThetadP1 * q.dThetadP2.transpose() + q.theta * q.d2ThetadP1dP2);
+	Matrix3 df1dP3 = -k * l * (q.dThetadP1 * q.dThetadP3.transpose() + q.theta * q.d2ThetadP1dP3);
 
-	Matrix3 df2dP0 = -k * (q.dThetadP2 * q.dThetadP0.transpose() + q.theta * q.d2ThetadP2dP0);
-	Matrix3 df2dP1 = -k * (q.dThetadP2 * q.dThetadP1.transpose() + q.theta * q.d2ThetadP2dP1);
-	Matrix3 df2dP2 = -k * (q.dThetadP2 * q.dThetadP2.transpose() + q.theta * q.d2ThetadP2dP2);
-	Matrix3 df2dP3 = -k * (q.dThetadP2 * q.dThetadP3.transpose() + q.theta * q.d2ThetadP2dP3);
+	Matrix3 df2dP0 = -k * l * (q.dThetadP2 * q.dThetadP0.transpose() + q.theta * q.d2ThetadP2dP0);
+	Matrix3 df2dP1 = -k * l * (q.dThetadP2 * q.dThetadP1.transpose() + q.theta * q.d2ThetadP2dP1);
+	Matrix3 df2dP2 = -k * l * (q.dThetadP2 * q.dThetadP2.transpose() + q.theta * q.d2ThetadP2dP2);
+	Matrix3 df2dP3 = -k * l * (q.dThetadP2 * q.dThetadP3.transpose() + q.theta * q.d2ThetadP2dP3);
 
-	Matrix3 df3dP0 = -k * (q.dThetadP3 * q.dThetadP0.transpose() + q.theta * q.d2ThetadP3dP0);
-	Matrix3 df3dP1 = -k * (q.dThetadP3 * q.dThetadP1.transpose() + q.theta * q.d2ThetadP3dP1);
-	Matrix3 df3dP2 = -k * (q.dThetadP3 * q.dThetadP2.transpose() + q.theta * q.d2ThetadP3dP2);
-	Matrix3 df3dP3 = -k * (q.dThetadP3 * q.dThetadP3.transpose() + q.theta * q.d2ThetadP3dP3);
+	Matrix3 df3dP0 = -k * l * (q.dThetadP3 * q.dThetadP0.transpose() + q.theta * q.d2ThetadP3dP0);
+	Matrix3 df3dP1 = -k * l * (q.dThetadP3 * q.dThetadP1.transpose() + q.theta * q.d2ThetadP3dP1);
+	Matrix3 df3dP2 = -k * l * (q.dThetadP3 * q.dThetadP2.transpose() + q.theta * q.d2ThetadP3dP2);
+	Matrix3 df3dP3 = -k * l * (q.dThetadP3 * q.dThetadP3.transpose() + q.theta * q.d2ThetadP3dP3);
 
 	for (int i = 0; i < 3; ++i)
 	{
@@ -278,30 +281,30 @@ void BendCondition<Real>::computeForces(
 
 	// fd = -d * dTheta/dt * dTheta/dx:
 
-	dampingForces.segment<3>(3 * m_inds[0]) -= d * q.dThetadt * q.dThetadP0;
-	dampingForces.segment<3>(3 * m_inds[1]) -= d * q.dThetadt * q.dThetadP1;
-	dampingForces.segment<3>(3 * m_inds[2]) -= d * q.dThetadt * q.dThetadP2;
-	dampingForces.segment<3>(3 * m_inds[3]) -= d * q.dThetadt * q.dThetadP3;
+	dampingForces.segment<3>(3 * m_inds[0]) -= d * l * q.dThetadt * q.dThetadP0;
+	dampingForces.segment<3>(3 * m_inds[1]) -= d * l * q.dThetadt * q.dThetadP1;
+	dampingForces.segment<3>(3 * m_inds[2]) -= d * l * q.dThetadt * q.dThetadP2;
+	dampingForces.segment<3>(3 * m_inds[3]) -= d * l * q.dThetadt * q.dThetadP3;
 
-	Matrix3 dfd0dV0 = -d * (q.dThetadP0 * q.dThetadP0.transpose());
-	Matrix3 dfd0dV1 = -d * (q.dThetadP0 * q.dThetadP1.transpose());
-	Matrix3 dfd0dV2 = -d * (q.dThetadP0 * q.dThetadP2.transpose());
-	Matrix3 dfd0dV3 = -d * (q.dThetadP0 * q.dThetadP3.transpose());
+	Matrix3 dfd0dV0 = -d * l * (q.dThetadP0 * q.dThetadP0.transpose());
+	Matrix3 dfd0dV1 = -d * l * (q.dThetadP0 * q.dThetadP1.transpose());
+	Matrix3 dfd0dV2 = -d * l * (q.dThetadP0 * q.dThetadP2.transpose());
+	Matrix3 dfd0dV3 = -d * l * (q.dThetadP0 * q.dThetadP3.transpose());
 
-	Matrix3 dfd1dV0 = -d * (q.dThetadP1 * q.dThetadP0.transpose());
-	Matrix3 dfd1dV1 = -d * (q.dThetadP1 * q.dThetadP1.transpose());
-	Matrix3 dfd1dV2 = -d * (q.dThetadP1 * q.dThetadP2.transpose());
-	Matrix3 dfd1dV3 = -d * (q.dThetadP1 * q.dThetadP3.transpose());
+	Matrix3 dfd1dV0 = -d * l * (q.dThetadP1 * q.dThetadP0.transpose());
+	Matrix3 dfd1dV1 = -d * l * (q.dThetadP1 * q.dThetadP1.transpose());
+	Matrix3 dfd1dV2 = -d * l * (q.dThetadP1 * q.dThetadP2.transpose());
+	Matrix3 dfd1dV3 = -d * l * (q.dThetadP1 * q.dThetadP3.transpose());
 
-	Matrix3 dfd2dV0 = -d * (q.dThetadP2 * q.dThetadP0.transpose());
-	Matrix3 dfd2dV1 = -d * (q.dThetadP2 * q.dThetadP1.transpose());
-	Matrix3 dfd2dV2 = -d * (q.dThetadP2 * q.dThetadP2.transpose());
-	Matrix3 dfd2dV3 = -d * (q.dThetadP2 * q.dThetadP3.transpose());
+	Matrix3 dfd2dV0 = -d * l * (q.dThetadP2 * q.dThetadP0.transpose());
+	Matrix3 dfd2dV1 = -d * l * (q.dThetadP2 * q.dThetadP1.transpose());
+	Matrix3 dfd2dV2 = -d * l * (q.dThetadP2 * q.dThetadP2.transpose());
+	Matrix3 dfd2dV3 = -d * l * (q.dThetadP2 * q.dThetadP3.transpose());
 
-	Matrix3 dfd3dV0 = -d * (q.dThetadP3 * q.dThetadP0.transpose());
-	Matrix3 dfd3dV1 = -d * (q.dThetadP3 * q.dThetadP1.transpose());
-	Matrix3 dfd3dV2 = -d * (q.dThetadP3 * q.dThetadP2.transpose());
-	Matrix3 dfd3dV3 = -d * (q.dThetadP3 * q.dThetadP3.transpose());
+	Matrix3 dfd3dV0 = -d * l * (q.dThetadP3 * q.dThetadP0.transpose());
+	Matrix3 dfd3dV1 = -d * l * (q.dThetadP3 * q.dThetadP1.transpose());
+	Matrix3 dfd3dV2 = -d * l * (q.dThetadP3 * q.dThetadP2.transpose());
+	Matrix3 dfd3dV3 = -d * l * (q.dThetadP3 * q.dThetadP3.transpose());
 
 	for (int i = 0; i < 3; ++i)
 	{
@@ -340,25 +343,25 @@ void BendCondition<Real>::computeForces(
 	// details.
 
 	// Therefore, lets compute -kd * d2c/dpidpj dc/dt:
-	Matrix3 dD0dP0Pseudo = -d * (q.d2ThetadP0dP0 * q.dThetadt);
-	Matrix3 dD1dP0Pseudo = -d * (q.d2ThetadP1dP0 * q.dThetadt);
-	Matrix3 dD2dP0Pseudo = -d * (q.d2ThetadP2dP0 * q.dThetadt);
-	Matrix3 dD3dP0Pseudo = -d * (q.d2ThetadP3dP0 * q.dThetadt);
+	Matrix3 dD0dP0Pseudo = -d * l * (q.d2ThetadP0dP0 * q.dThetadt);
+	Matrix3 dD1dP0Pseudo = -d * l * (q.d2ThetadP1dP0 * q.dThetadt);
+	Matrix3 dD2dP0Pseudo = -d * l * (q.d2ThetadP2dP0 * q.dThetadt);
+	Matrix3 dD3dP0Pseudo = -d * l * (q.d2ThetadP3dP0 * q.dThetadt);
 
-	Matrix3 dD0dP1Pseudo = -d * (q.d2ThetadP0dP1 * q.dThetadt);
-	Matrix3 dD1dP1Pseudo = -d * (q.d2ThetadP1dP1 * q.dThetadt);
-	Matrix3 dD2dP1Pseudo = -d * (q.d2ThetadP2dP1 * q.dThetadt);
-	Matrix3 dD3dP1Pseudo = -d * (q.d2ThetadP3dP1 * q.dThetadt);
+	Matrix3 dD0dP1Pseudo = -d * l * (q.d2ThetadP0dP1 * q.dThetadt);
+	Matrix3 dD1dP1Pseudo = -d * l * (q.d2ThetadP1dP1 * q.dThetadt);
+	Matrix3 dD2dP1Pseudo = -d * l * (q.d2ThetadP2dP1 * q.dThetadt);
+	Matrix3 dD3dP1Pseudo = -d * l * (q.d2ThetadP3dP1 * q.dThetadt);
 
-	Matrix3 dD0dP2Pseudo = -d * (q.d2ThetadP0dP2 * q.dThetadt);
-	Matrix3 dD1dP2Pseudo = -d * (q.d2ThetadP1dP2 * q.dThetadt);
-	Matrix3 dD2dP2Pseudo = -d * (q.d2ThetadP2dP2 * q.dThetadt);
-	Matrix3 dD3dP2Pseudo = -d * (q.d2ThetadP3dP2 * q.dThetadt);
+	Matrix3 dD0dP2Pseudo = -d * l * (q.d2ThetadP0dP2 * q.dThetadt);
+	Matrix3 dD1dP2Pseudo = -d * l * (q.d2ThetadP1dP2 * q.dThetadt);
+	Matrix3 dD2dP2Pseudo = -d * l * (q.d2ThetadP2dP2 * q.dThetadt);
+	Matrix3 dD3dP2Pseudo = -d * l * (q.d2ThetadP3dP2 * q.dThetadt);
 
-	Matrix3 dD0dP3Pseudo = -d * (q.d2ThetadP0dP3 * q.dThetadt);
-	Matrix3 dD1dP3Pseudo = -d * (q.d2ThetadP1dP3 * q.dThetadt);
-	Matrix3 dD2dP3Pseudo = -d * (q.d2ThetadP2dP3 * q.dThetadt);
-	Matrix3 dD3dP3Pseudo = -d * (q.d2ThetadP3dP3 * q.dThetadt);
+	Matrix3 dD0dP3Pseudo = -d * l * (q.d2ThetadP0dP3 * q.dThetadt);
+	Matrix3 dD1dP3Pseudo = -d * l * (q.d2ThetadP1dP3 * q.dThetadt);
+	Matrix3 dD2dP3Pseudo = -d * l * (q.d2ThetadP2dP3 * q.dThetadt);
+	Matrix3 dD3dP3Pseudo = -d * l * (q.d2ThetadP3dP3 * q.dThetadt);
 
 	for (int i = 0; i < 3; ++i)
 	{

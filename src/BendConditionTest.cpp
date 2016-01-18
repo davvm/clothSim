@@ -583,6 +583,22 @@ namespace UnitTest1
 			x[3 * 4 + 2] = 0;
 
 			Eigen::VectorXd uv(5 * 2);
+
+			uv[2 * 0] = -2.0;
+			uv[2 * 0 + 1] = 0;
+
+			uv[2 * 1] = 0;
+			uv[2 * 1 + 1] = 1.0;
+
+			uv[2 * 2] = 0;
+			uv[2 * 2 + 1] = -1.0;
+
+			uv[2 * 3] = 1.0;
+			uv[2 * 3 + 1] = 0;
+
+			uv[2 * 4] = 0.0;
+			uv[2 * 4 + 1] = 0;
+
 			Eigen::VectorXd f(5 * 3);
 			f.setConstant(0);
 			Eigen::VectorXd dampingForces(5 * 3);
@@ -598,7 +614,9 @@ namespace UnitTest1
 			// check we've got the energy condition right, and we're measuring the angle between the normals:
 			Eigen::VectorXd c;
 			c = bc.C(x, uv);
-			Assert::AreEqual(c[0], 2 * atan(0.2), 1.e-4);
+
+			// sqrt(2) comes from the length of the bend edge:
+			Assert::AreEqual(c[0], sqrt(2.0) * 2 * atan(0.2), 1.e-4);
 
 			// compute forces analytically:
 			bc.computeForces(x, uv, k, f, dfdx, v, d, dampingForces, dampingPseudoDerivatives, dfdv);
@@ -639,7 +657,7 @@ namespace UnitTest1
 
 			// test we're measuring a negative angle:
 			c = bc.C(x, uv);
-			Assert::AreEqual(c[0], -2 * atan(0.2), 1.e-4);
+			Assert::AreEqual(c[0], -sqrt(2) * 2 * atan(0.2), 1.e-4);
 
 			// recompute the forces and check the derivatives:
 			f.setConstant(0);
