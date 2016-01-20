@@ -4,9 +4,8 @@
 
 #include "simLib\BendCondition.h"
 
-#include <iostream>
-
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+using namespace ClothSim;
 
 namespace UnitTest1
 {

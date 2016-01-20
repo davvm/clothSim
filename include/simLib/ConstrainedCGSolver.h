@@ -3,6 +3,9 @@
 
 #include "LinearSolver.h"
 
+namespace ClothSim
+{
+
 // Solves the linear system using conjugate gradients,
 // projecting out the given constraints at every step:
 template <class Real>
@@ -20,13 +23,13 @@ public:
 		const Vector &constraintVelocityDeltas,
 		Real tol,
 		int maxIterations
-	);
+		);
 
 	// perform a linear solve (A * result = rhs):
 	virtual void solve(const SparseMatrix &A, const Vector &rhs, Vector &result) const;
 
 private:
-	
+
 	void filter(Vector &x) const;
 	void precondition(Vector &x, Vector &p, bool inverse) const;
 
@@ -38,5 +41,6 @@ private:
 
 };
 
+} //namespace ClothSim
 
 #endif

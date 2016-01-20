@@ -3,6 +3,9 @@
 
 #include "EnergyCondition.h"
 
+namespace ClothSim
+{
+
 template<class Real>
 struct TangentTriangleQuantities
 {
@@ -64,5 +67,7 @@ struct TangentTriangleQuantities
 
 	}
 };
+
+} //namespace ClothSim
 
 #endif

@@ -29,7 +29,7 @@ private:
 
 	MObject createMesh(const MTime& time, MObject& outData, MStatus& stat);
 
-	std::auto_ptr< ClothMesh<float> > m_simMesh;
+	std::auto_ptr< ClothSim::ClothMesh<float> > m_simMesh;
 	double m_prevTime;
 
 };

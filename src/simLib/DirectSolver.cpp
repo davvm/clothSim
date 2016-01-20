@@ -1,5 +1,7 @@
 #include "simLib\DirectSolver.h"
 
+using namespace ClothSim;
+
 template<class Real>
 void DirectSolver<Real>::solve(const SparseMatrix &A, const Vector &rhs, Vector &result) const
 {

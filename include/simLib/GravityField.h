@@ -3,6 +3,9 @@
 
 #include "ForceField.h"
 
+namespace ClothSim
+{
+
 template <class Real>
 class GravityField : public ForceField<Real>
 {
@@ -19,5 +22,8 @@ private:
 	Vector3 m_g;
 
 };
+
+} //namespace ClothSim
+
 
 #endif // GRAVITYFIELD_H

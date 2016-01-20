@@ -2,6 +2,8 @@
 
 #include "CppUnitTest.h"
 
+using namespace ClothSim;
+
 void checkVectorEquality(Eigen::Vector3d v0, Eigen::Vector3d v1, double tol)
 {
 	Microsoft::VisualStudio::CppUnitTestFramework::Assert::AreEqual(v0[0], v1[0], tol);

@@ -1,5 +1,7 @@
 #include "simLib\ConstrainedCGSolver.h"
 
+using namespace ClothSim;
+
 template<class Real>
 ConstrainedCGSolver<Real>::ConstrainedCGSolver(
 	const std::vector<int> &constraintIndices,

@@ -1,5 +1,7 @@
 #include "simLib\GravityField.h"
 
+using namespace ClothSim;
+
 template <class Real>
 GravityField<Real>::GravityField(const Vector &m, Vector3 g) : m_m(m), m_g( g )
 {

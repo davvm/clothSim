@@ -4,6 +4,9 @@
 #include "Eigen/Dense"
 #include "Eigen/Sparse"
 
+namespace ClothSim
+{
+
 // abstract class for solving linear systems
 template <class Real>
 class LinearSolver
@@ -15,8 +18,10 @@ public:
 	typedef Eigen::SparseMatrix<Real> SparseMatrix;
 
 	// perform a linear solve (A * result = rhs):
-	virtual void solve( const SparseMatrix &A, const Vector &rhs, Vector &result ) const = 0;
+	virtual void solve(const SparseMatrix &A, const Vector &rhs, Vector &result) const = 0;
 
 };
+
+} //namespace ClothSim
 
 #endif

@@ -4,6 +4,9 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 
+namespace ClothSim
+{
+
 // abstract class for defining force fields and adding to a vector of
 // forces/matrix of force derivatives:
 template <class Real>
@@ -23,5 +26,7 @@ public:
 	virtual void forcesAndDerivatives(Vector& forces, SparseMatrix &dfdx) const = 0;
 
 };
+
+} //namespace ClothSim
 
 #endif // FORCEFIELD_H

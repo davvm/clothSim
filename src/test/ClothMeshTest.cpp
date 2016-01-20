@@ -5,10 +5,10 @@
 #include "simLib\ClothMesh.h"
 #include "simLib\DirectSolver.h"
 
-#include <iostream>
 #include <set>
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+using namespace ClothSim;
 
 namespace UnitTest1
 {

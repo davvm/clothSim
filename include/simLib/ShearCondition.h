@@ -4,6 +4,9 @@
 #include "EnergyCondition.h"
 #include "TangentTriangleQuantities.h"
 
+namespace ClothSim
+{
+
 template <class Real>
 class ShearCondition : public EnergyCondition<Real>
 {
@@ -24,7 +27,7 @@ public:
 			const Vector3 &p0, const Vector3 &p1, const Vector3 &p2,
 			const Vector2 &uv0, const Vector2 &uv1, const Vector2 &uv2,
 			const Vector3 &v0, const Vector3 &v1, const Vector3 &v2
-		);
+			);
 
 		// normalized tangents:
 		Vector3 wuHat, wvHat;
@@ -57,5 +60,6 @@ private:
 
 };
 
+} //namespace ClothSim
 
 #endif // SHEARCONDITION_H

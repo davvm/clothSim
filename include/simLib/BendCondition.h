@@ -3,6 +3,9 @@
 
 #include "EnergyCondition.h"
 
+namespace ClothSim
+{
+
 template <class Real>
 class BendCondition : public EnergyCondition<Real>
 {
@@ -75,8 +78,8 @@ private:
 	//
 	//     0
 	//    / \
-	//   /   \
-	//  1-----2
+		//   /   \
+		//  1-----2
 	//   \   /
 	//    \ /
 	//     3
@@ -85,5 +88,6 @@ private:
 
 };
 
+} //namespace ClothSim
 
 #endif // BENDCONDITION_H

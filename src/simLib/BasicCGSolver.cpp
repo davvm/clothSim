@@ -1,6 +1,8 @@
 #include "simLib\BasicCGSolver.h"
 #include <Eigen/IterativeLinearSolvers>
 
+using namespace ClothSim;
+
 template<class Real>
 void BasicCGSolver<Real>::solve(const SparseMatrix &A, const Vector &rhs, Vector &result) const
 {

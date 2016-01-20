@@ -10,6 +10,9 @@
 
 #include "ForceField.h"
 
+namespace ClothSim
+{
+
 template <class Real>
 class ClothMesh
 {
@@ -30,7 +33,7 @@ public:
 		Real kBend, Real kStretch, Real kShear,
 		Real dBend, Real dStretch, Real dShear,
 		Real density
-	);
+		);
 
 	// accessor for positions:
 	const Vector &x() const;
@@ -50,7 +53,7 @@ public:
 	const std::vector< StretchCondition<Real> > &stretchConditions() const;
 
 	// advance the simulation:
-	void advance( std::vector< ForceField<Real>* > &forceFields, Real dt, const LinearSolver<Real> &solver);
+	void advance(std::vector< ForceField<Real>* > &forceFields, Real dt, const LinearSolver<Real> &solver);
 
 	// calculate forces and derivatives:
 	void forcesAndDerivatives(const Vector &x, const Vector &uv, const Vector &v, Vector &f, Vector &d, SparseMatrix &dfdx, SparseMatrix &dddx, SparseMatrix &dddv) const;
@@ -99,5 +102,7 @@ private:
 	std::vector< StretchCondition<Real> > m_stretchConditions;
 
 };
+
+} //namespace ClothSim
 
 #endif

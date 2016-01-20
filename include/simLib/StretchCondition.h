@@ -4,6 +4,9 @@
 #include "EnergyCondition.h"
 #include "TangentTriangleQuantities.h"
 
+namespace ClothSim
+{
+
 template <class Real>
 class StretchCondition : public EnergyCondition<Real>
 {
@@ -25,7 +28,7 @@ public:
 			const Vector2 &uv0, const Vector2 &uv1, const Vector2 &uv2,
 			const Vector3 &v0, const Vector3 &v1, const Vector3 &v2,
 			Real bu, Real bv
-		);
+			);
 
 		// energy condition:
 		Real C0, C1;
@@ -62,6 +65,8 @@ private:
 	Real m_restU;
 	Real m_restV;
 };
+
+} //namespace ClothSim
 
 
 #endif // STRETCHCONDITION_H

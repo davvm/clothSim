@@ -1,5 +1,7 @@
 #include "simLib\BendCondition.h"
-#include <iostream>
+
+using namespace ClothSim;
+
 template<class Real>
 BendCondition<Real>::BendCondition(int i0, int i1, int i2, int i3)
 {

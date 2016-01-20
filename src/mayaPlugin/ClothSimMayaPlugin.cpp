@@ -33,6 +33,8 @@
 #include <maya/MDataBlock.h>
 #include <maya/MDataHandle.h>
 
+using namespace ClothSim;
+
 MTypeId ClothSimMayaPlugin::id(0x8f17c);
 
 MObject ClothSimMayaPlugin::g_aTime;

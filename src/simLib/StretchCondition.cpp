@@ -1,5 +1,7 @@
 ﻿#include "simLib\StretchCondition.h"
 
+using namespace ClothSim;
+
 template <class Real>
 StretchCondition<Real>::StretchCondition(int i0, int i1, int i2, Real restU, Real restV) : m_restU(restU), m_restV(restV)
 {
